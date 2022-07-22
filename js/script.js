@@ -150,6 +150,7 @@ class App {
     /**
      * load unclustered sentences(just the id objects) from the API,
      * then initiate its store.
+     * check the API documentation for the format of each item.
      * @private
      */
     async _initiateSentenceStore(){
@@ -238,6 +239,19 @@ class App {
         Promise.all([cluster, feedbacks] ).then(cb.bind(this));
     }
 
+    /**
+     * generate the HTML element for a sentence div
+     * to be appended to the body of section_2.
+     * @param sentence_text
+     */
+    generateSentenceDiv(sentence_text){
+        var DIV = div("row" ,"unclustered-sentence");
+        DIV.innerHTML = sentence_text;
+
+        return DIV;
+    }
+
+
     /** grab a sentence from the api.
      * @param unclusteredSentenceID the sentence ID.
      * @return {Promise<Object>}
@@ -260,10 +274,27 @@ class App {
      */
     async fillSection2(){
         const _ = this;
+        const unclusteredSentencesBox = document.querySelector(".unclusteredSentencesWrapper");
         if(!this._sentenceStoreInitiated()){
             print("script.js 257, store not initiated. ")
         }
-        print("script.js 266: ", this._sentenceStore.getAll())
+        var ids = this._sentenceStore.getSome(100);
+        var sentencePromises = [];
+        ids.forEach(idobj => {
+            sentencePromises.push(this.grabSentence(idobj.id));
+        })
+
+        Promise.all(sentencePromises).then( sentences => {
+            print("script.js 274: ", sentences);
+            sentences.forEach(sentence => {
+                var text = sentence[0].sentence_text;
+                addChild(
+                    unclusteredSentencesBox,
+                    _.generateSentenceDiv(text)
+                )
+            })
+        })
+
     }
 
 
@@ -295,11 +326,13 @@ class Store{
     }
 
     /**
-     * get the first n items.
+     * get the first n items. n must be <= number of items available.
      * @param n
      */
     getSome(n){
-
+        var ans = [];
+        for(var i = 0; i < n; i++) ans.push(this.items[i]);
+        return ans;
     }
 }
 
