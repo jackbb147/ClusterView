@@ -16,6 +16,10 @@ function print(...thing){
     console.log(...thing);
 }
 
+function removeClass(el, ...names){
+    el.classList.remove(...names);
+}
+
 function addClass(el,...names){
     el.classList.add(...names);
 }

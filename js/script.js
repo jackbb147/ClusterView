@@ -9,9 +9,12 @@ class ClusterCard {
      *
      * @param title String
      * @param feedbackEntries Array [ String, String, ... ]
+     * @param i Number 1,2,3,... (optional) adds an extra class
      */
-    constructor(title, feedbackEntries) {
+    constructor(title, feedbackEntries, i) {
+        this.i = i;
         this.html = this.buildHTML(title, feedbackEntries);
+
     }
 
     /**
@@ -85,7 +88,10 @@ class ClusterCard {
     }
 
     buildCard(){
+        var i = this.i;
+        print("script.js 92: ", i);
         var card = div("ClusterCard");
+        if(!(i === undefined)) addClass(card, `ClusterCard-${i}`);
         return card;
     }
 
@@ -138,7 +144,9 @@ class App {
         var clusterStorePromise = this._initiateClusterStore();
         // ------------     ---------
         var cb = (() => {
-            this.fillSection1();
+            this.activateBtnLeft();
+            this.activateBtnRight();
+            this.fillSection1(1);
             this.fillSection2();
         }).bind(this);
 
@@ -147,6 +155,33 @@ class App {
         })
 
     }
+
+    activateBtnLeft(){
+        var leftBtn = document.querySelector(".leftBtn");
+        leftBtn.addEventListener("click", function(e){
+            //if there is no previous one, return
+            var current = document.querySelector(".ClusterCard:not(.dontdisplay)")
+            var prev = current.previousElementSibling;
+            if(prev=== null) return;
+            removeClass(prev, "dontdisplay");
+            addClass(current, "dontdisplay");
+
+        })
+    }
+
+    activateBtnRight(){
+        var rightBtn = document.querySelector(".rightBtn");
+        rightBtn.addEventListener("click", function(e){
+            //if there is no previous one, return
+            var current = document.querySelector(".ClusterCard:not(.dontdisplay)")
+            var next = current.nextElementSibling;
+            if(next === null) return;
+            removeClass(next, "dontdisplay");
+            addClass(current, "dontdisplay");
+
+        })
+    }
+
 
     /**
      * load unclustered sentences(just the id objects) from the API,
@@ -219,12 +254,18 @@ class App {
         return this.q("clusters");
     }
 
-    async fillSection1(){
+    /**
+     *
+     * @param N Number 1,2,3,... only the first N elements will be displayed (optional)
+     * @return {Promise<void>}
+     */
+    async fillSection1(N){
         return this.fillSection(
             ".clusters-box",
             this._clusterStore,
-            1,
-            Cluster
+            2,
+            Cluster,
+            N
         )
     }
 
@@ -236,7 +277,7 @@ class App {
         return this.fillSection(
             ".unclusteredSentencesWrapper",
             this._sentenceStore,
-            150,
+            5,
             Sentence
         )
         // var box = document.querySelector(".unclusteredSentencesWrapper")
@@ -262,29 +303,36 @@ class App {
      * @param store
      * @param n if -1, get ALL from the store (might overload memory).
      * @param ComponentFactory Sentence or Cluster
+     * @param N Number 1,2,3,... only the first N elements will be displayed (optional)
      * @return {Promise<void>}
      */
-    async fillSection(boxName, store, n, ComponentFactory){
+    async fillSection(boxName, store, n, ComponentFactory, N){
         var box = document.querySelector(boxName);
         var query = this.q.bind(this);
 
         var ids = store.getSome(n);
         var divPromises = [];
         print("script.js 273: ", ids);
+        var i = 0;
         ids.forEach(idObj => {
             let id = idObj.id;
-            let divPromise = (new ComponentFactory(query, id)).HTML();
+
+            let divPromise = (new ComponentFactory(query, id, i)).HTML();
             divPromises.push(divPromise);
+            i++;
         })
 
         print("script.js 279: ", divPromises);
 
         Promise.all(divPromises).then(divs => {
             print("script.js 283: ", divs);
+            var i = 0;
             divs.forEach(div => {
                 print("script.js 285: ", div);
-                addChild(box, div)}
-            );
+                if(N && i >= N) addClass(div, "dontdisplay")
+                addChild(box, div)
+                i++;
+            })
         })
     }
 
@@ -292,11 +340,13 @@ class App {
 
 /**
  * grabs something from the API
+ * @param i: Number 1,2,3,4... (optional)
  */
 class Component {
-    constructor(query, ID) {
+    constructor(query, ID, i) {
         this.q = query;
         this.ID = ID;
+        this.i = i;
     }
 
 }
@@ -306,8 +356,8 @@ class Component {
  * from the api.
  */
 class Cluster extends Component{
-    constructor(query, ID) {
-        super(query, ID);
+    constructor(query, ID, i) {
+        super(query, ID, i);
     }
 
     /** 56726
@@ -325,7 +375,8 @@ class Cluster extends Component{
             // print("script.js 191:", values[0][0], values[1]);
             print("script.js 331: ", values)
             const  cluster = values[0][0], feedbacks = values[1];
-            var card = (new ClusterCard(cluster.title, feedbacks)).getHTML();
+            var card = (new ClusterCard(cluster.title, feedbacks, this.i)).getHTML();
+
             return card;
         }
         return Promise.all([cluster, feedbacks] ).then(cb.bind(this));
@@ -379,7 +430,8 @@ class Sentence extends Component{
     async HTML(){
         return this.grab().then(val => {
             let text = val[0].sentence_text;
-            return this.generateSentenceDiv(text);
+            var DIV = this.generateSentenceDiv(text);
+            return DIV;
         })
     }
 }

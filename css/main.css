@@ -84,6 +84,9 @@ body {
     width: 100%;
     height: 100%;
     margin: 0;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: nowrap;
 }
 
 .section_body .row .col {
@@ -104,6 +107,7 @@ body {
     justify-content: center;
     overflow-x: scroll;
 }
+
 
 
 .unclusteredSentencesWrapper {
