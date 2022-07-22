@@ -14,6 +14,10 @@
     --MAIN-SECTION-BODY-HEIGHT: calc(100% - var(--MAIN-SECTION-HEAD-HEIGHT));
 }
 
+.dontdisplay {
+    display: none;
+}
+
 body {
     width: 100vw;
     height: 100vh;

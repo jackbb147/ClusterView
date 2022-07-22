@@ -200,11 +200,66 @@ class App {
     }
 
     /**
-     * fill(generate the HTML) of section1 (the clusters section)
+     * grabs the ID's of all unclustered sentences , from the API.
+     * @return {Promise<Array>}
+     */
+    async loadUnclusteredSentenceIDs(){
+        return this.q("unclusteredsentences");
+    }
+
+    /**
+     * fill(generate the HTML) of a section(1 or 2)
+     * by 1. generating individual items 2. appending
+     * each item to the box.
+     * @param boxName like ".name". Will be used to append the generated items to.
+     *  @param itemsArr array of dom nodes to be appended to box
+     *  @return
+     */
+
+    /**
+     * fill(generate the HTML) of section2 (the unclustered sentences section)
      * @return {Promise<void>}
      */
-    async fillSection1() {
-        return this.q("clusters");
+    async fillSection2(){
+        var box = document.querySelector(".unclusteredSentencesWrapper")
+        var query = this.q.bind(this);
+        var ids = this._sentenceStore.getSome(100);
+        var divPromises = [];
+        ids.forEach(idObj => {
+            let id = idObj.id;
+            let divPromise = (new Sentence(query, id)).HTML();
+            divPromises.push(divPromise);
+        })
+
+        Promise.all(divPromises).then(divs => {
+            divs.forEach(div => addChild(box, div));
+        })
+    }
+
+    async fillSection(boxName, ){
+
+    }
+
+}
+
+/**
+ * grabs something from the API
+ */
+class Component {
+    constructor(query, ID) {
+        this.q = query;
+        this.ID = ID;
+    }
+
+}
+
+/**
+ * build a cluster, including all its associated feedback entries.
+ * from the api.
+ */
+class Cluster extends Component{
+    constructor(query, ID) {
+        super(query, ID);
     }
 
     /** 56726
@@ -239,6 +294,30 @@ class App {
         Promise.all([cluster, feedbacks] ).then(cb.bind(this));
     }
 
+
+
+    /**
+     *
+     * @param obj
+     * @return {Promise<void>}
+     */
+    async grab(obj){
+        // this.grabSentence(idobj.id)
+    }
+
+    HTML(){
+
+    }
+}
+
+/**
+ * grabs a sentence from the API.
+ */
+class Sentence extends Component{
+    constructor(query, ID) {
+        super(query, ID);
+    }
+
     /**
      * generate the HTML element for a sentence div
      * to be appended to the body of section_2.
@@ -251,54 +330,25 @@ class App {
         return DIV;
     }
 
-
-    /** grab a sentence from the api.
-     * @param unclusteredSentenceID the sentence ID.
-     * @return {Promise<Object>}
-     */
-    async grabSentence(sentenceID){
-        return this.q(`sentence/${sentenceID}`);
-    }
-
     /**
-     * grabs the ID's of all unclustered sentences , from the API.
-     * @return {Promise<Array>}
-     */
-    async loadUnclusteredSentenceIDs(){
-        return this.q("unclusteredsentences");
-    }
-
-    /**
-     * fill(generate the HTML) of section2 (the unclustered sentences section)
+     * @param obj see the Cluster API for the format of a sentence object.
      * @return {Promise<void>}
      */
-    async fillSection2(){
-        const _ = this;
-        const unclusteredSentencesBox = document.querySelector(".unclusteredSentencesWrapper");
-        if(!this._sentenceStoreInitiated()){
-            print("script.js 257, store not initiated. ")
-        }
-        var ids = this._sentenceStore.getSome(100);
-        var sentencePromises = [];
-        ids.forEach(idobj => {
-            sentencePromises.push(this.grabSentence(idobj.id));
-        })
-
-        Promise.all(sentencePromises).then( sentences => {
-            print("script.js 274: ", sentences);
-            sentences.forEach(sentence => {
-                var text = sentence[0].sentence_text;
-                addChild(
-                    unclusteredSentencesBox,
-                    _.generateSentenceDiv(text)
-                )
-            })
-        })
-
+    async grab(){
+        // return this.q(`sentence/${obj.id}`).then( val => val[0].sentence_text);
+        return this.q(`sentence/${this.ID}`);
     }
 
-
-
+    /**
+     *
+     * @return {Promise<void>}
+     */
+    HTML(){
+        return this.grab().then(val => {
+            let text = val[0].sentence_text;
+            return this.generateSentenceDiv(text);
+        })
+    }
 }
 
 /**
