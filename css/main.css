@@ -4,7 +4,7 @@
 
 :root {
     --DBG-BGCLR: navajowhite;
-    --DBG-BGCLR2: red;
+    /*--DBG-BGCLR2: red;*/
     --DBG-BORDER: 1px solid ;
     --DBG-BORDER2: 1px solid greenyellow;
     --DBG-BORDER3: 3px solid purple;

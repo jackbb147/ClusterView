@@ -5,7 +5,9 @@
     --CLUSTER-CARD_HEIGHT: 95%;
     --CLUSTER-CARD_HEAD-HEIGHT: 10%;
     --CLUSTER-CARD_BODY-HEIGHT: calc(100% - var(--CLUSTER-CARD_HEAD-HEIGHT));
-    --CLUSTER-CARD_FEEDBACK-ENTRY-HEIGHT: 50%;
+    --CLUSTER-CARD_FEEDBACK-ENTRY-HEIGHT: 40%;
+    --CLUSTER-CARD_FEEDBACK-ENTRY_BTN-WIDTH: 30%;
+    --CLUSTER-CARD_FEEDBACK-ENTRY_TEXT-WIDTH: calc(100% - var(--CLUSTER-CARD_FEEDBACK-ENTRY_BTN-WIDTH));
 }
 
 
@@ -57,6 +59,27 @@
 
 
 
-.ClusterCard .ClusterCard_body .row {
+.ClusterCard .ClusterCard_body .ClusterCard_feedback {
+
     height: var(--CLUSTER-CARD_FEEDBACK-ENTRY-HEIGHT);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: nowrap;
+
 }
+
+.ClusterCard_feedback div {
+    height: 100%;
+    border: var(--DBG-BORDER3);
+    overflow: hidden;
+    display: inline-flex;
+    align-items: center;
+    width: auto;
+    
+}
+
+.ClusterCard_feedback div:nth-child(2){
+    width: var(--CLUSTER-CARD_FEEDBACK-ENTRY_BTN-WIDTH);
+
+}
+
