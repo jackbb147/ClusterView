@@ -7,6 +7,7 @@
     --DBG-BGCLR2: red;
     --DBG-BORDER: 1px solid ;
     --DBG-BORDER2: 1px solid greenyellow;
+    --DBG-BORDER3: 3px solid purple;
     --MAIN-SECTION-1-HEIGHT: 60%;
     --MAIN-SECTION-2-HEIGHT: calc(100% - var(--MAIN-SECTION-1-HEIGHT));
     --MAIN-SECTION-HEAD-HEIGHT: 10%;
@@ -58,8 +59,37 @@ body {
     align-items: center;
 }
 
-.section_body div{
+.section_body .container_fluid{
     background-color: var(--DBG-BGCLR);
     width: 100%;
     height: 100%;
+    padding: 0;
+}
+
+.section_body .row {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+}
+
+.clustersWrapper .col {
+
+    border: var(--DBG-BORDER)
+}
+
+
+.unclusteredSentencesWrapper {
+
+    overflow-y: scroll;
+}
+
+
+/* hides scroll bar but still enables scrolling */
+.hideScrollBar{
+    -ms-overflow-style: none; /* for Internet Explorer, Edge */
+    scrollbar-width: none; /* for Firefox */
+}
+
+.hideScrollBar::-webkit-scrollbar {
+    display: none; /* for Chrome, Safari, and Opera */
 }
