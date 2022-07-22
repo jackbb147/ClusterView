@@ -29,7 +29,7 @@ function create(tag, ...classNames){
 
 
 function div( ...cnames){
-    print("div")
+    // print("div")
     return create("div",...cnames)
 }
 //helper function to do parent.appendChild(child)

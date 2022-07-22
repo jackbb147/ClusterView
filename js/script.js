@@ -120,16 +120,53 @@ class ClusterCard {
     }
 }
 
-const DUMMYCLUSTER = ["Once again the app will not download.The app doesn't need a makeover every 96 hrs.Terrible!", 'Trying to book a flight, I prefer United as I have… downloaded it again.Very frustrating.Please help', 'Wont download.', 'Twice now, I cannot even download the app.Ugh!', "The application won't even download onto my phone", "Won't download.Been trying 3 days", 'I have downloaded the app 5 times.Each time I clic…is the only airline app I’ve had this issue with.', "Won't download after multiple attempts", 'Can not download', 'I have downloaded the app 5 times.Each time I clic…is the only airline app I’ve had this issue with.', 'asking for a review already?just downloaded the app!', 'The app is unusable and I always have to re-download the app when it gets like that.', 'Right now, no I would not recommend this app.Unite…ce for watching movies.It refuses to down oad it.', null, "Your app won't download", 'It does not work!I called United and they supposed…till good.I have already paid for all four of us.', 'Website has been easy so far, except for loading t…ed.Attempted 5 different times... different ways.'];
+// const DUMMYCLUSTER = ["Once again the app will not download.The app doesn't need a makeover every 96 hrs.Terrible!", 'Trying to book a flight, I prefer United as I have… downloaded it again.Very frustrating.Please help', 'Wont download.', 'Twice now, I cannot even download the app.Ugh!', "The application won't even download onto my phone", "Won't download.Been trying 3 days", 'I have downloaded the app 5 times.Each time I clic…is the only airline app I’ve had this issue with.', "Won't download after multiple attempts", 'Can not download', 'I have downloaded the app 5 times.Each time I clic…is the only airline app I’ve had this issue with.', 'asking for a review already?just downloaded the app!', 'The app is unusable and I always have to re-download the app when it gets like that.', 'Right now, no I would not recommend this app.Unite…ce for watching movies.It refuses to down oad it.', null, "Your app won't download", 'It does not work!I called United and they supposed…till good.I have already paid for all four of us.', 'Website has been easy so far, except for loading t…ed.Attempted 5 different times... different ways.'];
 //'http://localhost:1700/api/clusterfeedbacks/56726'
 
 class App {
     constructor(Clock) {
         if(Clock) this.clock = new Clock();
-        print(this.getClusters());
+        // print(this.getClusters());
         // print(this.getClusterFeedbacks(56726));
-        this.generateClusterCard(56726);
+        // this.generateClusterCard(56726);
+        // ------------   VARIABLES  ---------
+        this._sentenceStore = undefined;    //un-clustered sentences store.
 
+
+        // ------------     ---------
+        var storePromise = this._initiateSentenceStore();
+
+        // ------------     ---------
+        var cb = (() => {
+            this.fillSection2();
+        }).bind(this);
+
+        Promise.all([storePromise]).then( values => {
+            cb()
+        })
+
+    }
+
+    /**
+     * load unclustered sentences(just the id objects) from the API,
+     * then initiate its store.
+     * @private
+     */
+    async _initiateSentenceStore(){
+        const _ = this;
+        var sentenceIDs = this.loadUnclusteredSentenceIDs();
+        return sentenceIDs.then(arr => {
+            _._sentenceStore = new Store(arr);
+        })
+    }
+
+    /**
+     * check if sentence store has been loaded.
+     * @return {boolean}
+     * @private
+     */
+    _sentenceStoreInitiated(){
+        return !(this._sentenceStore === undefined);
     }
 
     _startTimer(){
@@ -155,17 +192,17 @@ class App {
         return fetch(`http://localhost:1700/api/${endpoint}`, params)
             .then(res => res.json())
             .then(val => {
-                print("script.js 58: ", val);
+                // print("script.js 58: ", val);
                 print("Timer: ", this._endTimer());
                 return val;
             })
     }
 
     /**
-     * get clusters
+     * fill(generate the HTML) of section1 (the clusters section)
      * @return {Promise<void>}
      */
-    async getClusters() {
+    async fillSection1() {
         return this.q("clusters");
     }
 
@@ -190,9 +227,9 @@ class App {
 
         const feedbacks = this.q(`clusterfeedbacks/${clusterID}`);
         this.clustersBox = document.querySelector(".clusters-box");
-        print("box: ", this.clustersBox);
+        // print("box: ", this.clustersBox);
         var cb = ( values ) => {
-            print("script.js 191:", values[0][0], values[1]);
+            // print("script.js 191:", values[0][0], values[1]);
             var box = this.clustersBox;
             const  cluster = values[0][0], feedbacks = values[1];
             var card = new ClusterCard(cluster.title, feedbacks)
@@ -201,9 +238,69 @@ class App {
         Promise.all([cluster, feedbacks] ).then(cb.bind(this));
     }
 
+    /** grab a sentence from the api.
+     * @param unclusteredSentenceID the sentence ID.
+     * @return {Promise<Object>}
+     */
+    async grabSentence(sentenceID){
+        return this.q(`sentence/${sentenceID}`);
+    }
+
+    /**
+     * grabs the ID's of all unclustered sentences , from the API.
+     * @return {Promise<Array>}
+     */
+    async loadUnclusteredSentenceIDs(){
+        return this.q("unclusteredsentences");
+    }
+
+    /**
+     * fill(generate the HTML) of section2 (the unclustered sentences section)
+     * @return {Promise<void>}
+     */
+    async fillSection2(){
+        const _ = this;
+        if(!this._sentenceStoreInitiated()){
+            print("script.js 257, store not initiated. ")
+        }
+        print("script.js 266: ", this._sentenceStore.getAll())
+    }
 
 
 
+}
+
+/**
+ * Manages a list of items.
+ */
+class Store{
+    /**
+     *
+     * @param arr Array
+     */
+    constructor(arr) {
+        this.items = arr;
+    }
+
+    add(item){
+        (this.items).push(item);
+    }
+
+    remove(identifier){
+        //TODO
+    }
+
+    getAll(){
+        return this.items;
+    }
+
+    /**
+     * get the first n items.
+     * @param n
+     */
+    getSome(n){
+
+    }
 }
 
 const app = new App(Clock);
