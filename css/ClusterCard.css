@@ -3,7 +3,7 @@
 :root {
     --CLUSTER-CARD_WIDTH: 95%;
     --CLUSTER-CARD_HEIGHT: 95%;
-    --CLUSTER-CARD_HEAD-HEIGHT: 10%;
+    --CLUSTER-CARD_HEAD-HEIGHT: 20%;
     --CLUSTER-CARD_BODY-HEIGHT: calc(100% - var(--CLUSTER-CARD_HEAD-HEIGHT));
     --CLUSTER-CARD_FEEDBACK-ENTRY-HEIGHT: 40%;
     --CLUSTER-CARD_FEEDBACK-ENTRY_BTN-WIDTH: 30%;
@@ -83,19 +83,21 @@
 }
 
 .ClusterCard_feedback div {
-    height: 100%;
+
     border: var(--DBG-BORDER3);
-    overflow: hidden;
-    display: inline-flex;
-    align-items: center;
-    width: auto;
-
+    overflow-y: scroll;
 }
 
-.ClusterCard_feedback div:nth-child(2){
+.feedback_entry {
+    width: var(--CLUSTER-CARD_FEEDBACK-ENTRY_TEXT-WIDTH);
+    height: 100%;
+}
+
+.feedback_remove {
     width: var(--CLUSTER-CARD_FEEDBACK-ENTRY_BTN-WIDTH);
-
+    height: 100%;
 }
+
 
 .unclusteredSentencesWrapper {
     overflow-y: scroll;
