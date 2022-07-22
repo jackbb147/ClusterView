@@ -21,6 +21,15 @@ body {
     overflow: hidden;
 }
 
+/* just for debugging */
+body {
+    /*border: 1px solid;*/
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    padding-left: 2rem;
+    padding-right: 2rem;
+}
+
 .main {
     border: var(--DBG-BORDER);
     height: 100%;
@@ -75,6 +84,16 @@ body {
 .clustersWrapper .col {
 
     border: var(--DBG-BORDER)
+}
+.clustersWrapper .col {
+    display: flex;
+    align-items: center;
+}
+    /* this is the div that contains ClusterCards. */
+.clustersWrapper .col:nth-child(2) {
+    flex-direction: row;
+    justify-content: center;
+    overflow-x: scroll;
 }
 
 

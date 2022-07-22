@@ -1,0 +1,62 @@
+/*DEPENDENCIES: BOOTSTRAP*/
+
+:root {
+    --CLUSTER-CARD_WIDTH: 95%;
+    --CLUSTER-CARD_HEIGHT: 95%;
+    --CLUSTER-CARD_HEAD-HEIGHT: 10%;
+    --CLUSTER-CARD_BODY-HEIGHT: calc(100% - var(--CLUSTER-CARD_HEAD-HEIGHT));
+    --CLUSTER-CARD_FEEDBACK-ENTRY-HEIGHT: 50%;
+}
+
+
+.ClusterCard {
+    border: var(--DBG-BORDER3);
+    height: var(--CLUSTER-CARD_HEIGHT);
+    width: var(--CLUSTER-CARD_WIDTH);
+}
+
+.ClusterCard .container_fluid {
+    border: var(--DBG-BORDER);
+    background-color: var(--DBG-BGCLR2);
+    position: relative;
+    height: 100%;
+    width: 100%;
+    overflow: hidden; /* TODO change this to allow for more cards*/
+}
+
+.ClusterCard .ClusterCard_head {
+    /*background-color: var(--DBG-BGCLR);*/
+    border: var(--DBG-BORDER2);
+    height: var(--CLUSTER-CARD_HEAD-HEIGHT);
+    display: flex;
+    justify-content: space-between;
+}
+
+/* cluster title */
+.ClusterCard .ClusterCard_head div:nth-child(1) {
+
+    width: 50%;
+}
+
+/* cluster close */
+.ClusterCard .ClusterCard_head div:nth-child(2) {
+
+    width: 20%;
+    text-align: right;
+}
+
+.ClusterCard .ClusterCard_body {
+    border: var(--DBG-BORDER2);
+    height: var(--CLUSTER-CARD_BODY-HEIGHT);
+    overflow-y: scroll;
+}
+
+.ClusterCard .ClusterCard_body .container_fluid {
+    overflow-y: scroll;
+}
+
+
+
+.ClusterCard .ClusterCard_body .row {
+    height: var(--CLUSTER-CARD_FEEDBACK-ENTRY-HEIGHT);
+}
