@@ -131,17 +131,18 @@ class App {
         // this.generateClusterCard(56726);
         // ------------   VARIABLES  ---------
         this._sentenceStore = undefined;    //un-clustered sentences store.
-
+        this._clusterStore = undefined;
 
         // ------------     ---------
-        var storePromise = this._initiateSentenceStore();
-
+        var sentenceStorePromise = this._initiateSentenceStore();
+        var clusterStorePromise = this._initiateClusterStore();
         // ------------     ---------
         var cb = (() => {
+            this.fillSection1();
             this.fillSection2();
         }).bind(this);
 
-        Promise.all([storePromise]).then( values => {
+        Promise.all([sentenceStorePromise, clusterStorePromise]).then(values => {
             cb()
         })
 
@@ -161,6 +162,13 @@ class App {
         })
     }
 
+    async _initiateClusterStore(){
+        const _ = this;
+        var clusterIDs = this.loadClusterIDs();
+        return clusterIDs.then(arr => {
+            _._clusterStore = new Store(arr);
+        })
+    }
     /**
      * check if sentence store has been loaded.
      * @return {boolean}
@@ -207,37 +215,77 @@ class App {
         return this.q("unclusteredsentences");
     }
 
-    /**
-     * fill(generate the HTML) of a section(1 or 2)
-     * by 1. generating individual items 2. appending
-     * each item to the box.
-     * @param boxName like ".name". Will be used to append the generated items to.
-     *  @param itemsArr array of dom nodes to be appended to box
-     *  @return
-     */
+    async loadClusterIDs(){
+        return this.q("clusters");
+    }
+
+    async fillSection1(){
+        return this.fillSection(
+            ".clusters-box",
+            this._clusterStore,
+            1,
+            Cluster
+        )
+    }
 
     /**
      * fill(generate the HTML) of section2 (the unclustered sentences section)
      * @return {Promise<void>}
      */
     async fillSection2(){
-        var box = document.querySelector(".unclusteredSentencesWrapper")
+        return this.fillSection(
+            ".unclusteredSentencesWrapper",
+            this._sentenceStore,
+            150,
+            Sentence
+        )
+        // var box = document.querySelector(".unclusteredSentencesWrapper")
+        // var query = this.q.bind(this);
+        // var ids = this._sentenceStore.getSome(100);
+        // var divPromises = [];
+        // ids.forEach(idObj => {
+        //     let id = idObj.id;
+        //     let divPromise = (new Sentence(query, id)).HTML();
+        //     divPromises.push(divPromise);
+        // })
+        //
+        // Promise.all(divPromises).then(divs => {
+        //     divs.forEach(div => addChild(box, div));
+        // })
+    }
+
+    /**
+     * fill(generate the HTML) of a section(1 or 2)
+     * by 1. generating individual items 2. appending
+     * each item to the box.
+     * @param boxName where to append.
+     * @param store
+     * @param n if -1, get ALL from the store (might overload memory).
+     * @param ComponentFactory Sentence or Cluster
+     * @return {Promise<void>}
+     */
+    async fillSection(boxName, store, n, ComponentFactory){
+        var box = document.querySelector(boxName);
         var query = this.q.bind(this);
-        var ids = this._sentenceStore.getSome(100);
+
+        var ids = store.getSome(n);
         var divPromises = [];
+        print("script.js 273: ", ids);
         ids.forEach(idObj => {
             let id = idObj.id;
-            let divPromise = (new Sentence(query, id)).HTML();
+            let divPromise = (new ComponentFactory(query, id)).HTML();
             divPromises.push(divPromise);
         })
 
+        print("script.js 279: ", divPromises);
+
         Promise.all(divPromises).then(divs => {
-            divs.forEach(div => addChild(box, div));
+            print("script.js 283: ", divs);
+            divs.forEach(div => {
+                print("script.js 285: ", div);
+                addChild(box, div)}
+            );
         })
-    }
-
-    async fillSection(boxName, ){
-
     }
 
 }
@@ -267,31 +315,20 @@ class Cluster extends Component{
      * then build the HTML component using the grabbed data, then append to the view.
      * @return card
      */
-    async generateClusterCard(clusterID) {
+    async HTML() {
         const _ = this;
-        /**
-         * (2) [Array(1), Array(17)]
-         * 0: Array(1)
-         * 0: {id: 56726, title: 'Once again the app will not download.', team_id: 427, centroid_sentence_id: 1019785, accepted: 1, …}
-         * length: 1
-         * [[Prototype]]: Array(0)
-         * 1: (17) ["Once again the app will not download.The app doesn't need a makeover every 96 hrs.Terrible!", 'Trying to book a flight, I prefer United as I have… downloaded it again.Very frustrating.Please help', 'Wont download.', 'Twice now, I cannot even download the app.Ugh!', "The application won't even download onto my phone", "Won't download.Been trying 3 days", 'I have downloaded the app 5 times.Each time I clic…is the only airline app I’ve had this issue with.', "Won't download after multiple attempts", 'Can not download', 'I have downloaded the app 5 times.Each time I clic…is the only airline app I’ve had this issue with.', 'asking for a review already?just downloaded the app!', 'The app is unusable and I always have to re-download the app when it gets like that.', 'Right now, no I would not recommend this app.Unite…ce for watching movies.It refuses to down oad it.', null, "Your app won't download", 'It does not work!I called United and they supposed…till good.I have already paid for all four of us.', 'Website has been easy so far, except for loading t…ed.Attempted 5 different times... different ways.']
-         * length: 2
-         * [[Prototype]]: Array(0)
-         */
+        var clusterID = _.ID;
         const cluster = this.q(`cluster/${clusterID}`);
 
         const feedbacks = this.q(`clusterfeedbacks/${clusterID}`);
-        this.clustersBox = document.querySelector(".clusters-box");
-        // print("box: ", this.clustersBox);
         var cb = ( values ) => {
             // print("script.js 191:", values[0][0], values[1]);
-            var box = this.clustersBox;
+            print("script.js 331: ", values)
             const  cluster = values[0][0], feedbacks = values[1];
-            var card = new ClusterCard(cluster.title, feedbacks)
-            addChild(box, card.getHTML());
+            var card = (new ClusterCard(cluster.title, feedbacks)).getHTML();
+            return card;
         }
-        Promise.all([cluster, feedbacks] ).then(cb.bind(this));
+        return Promise.all([cluster, feedbacks] ).then(cb.bind(this));
     }
 
 
@@ -303,10 +340,6 @@ class Cluster extends Component{
      */
     async grab(obj){
         // this.grabSentence(idobj.id)
-    }
-
-    HTML(){
-
     }
 }
 
@@ -343,7 +376,7 @@ class Sentence extends Component{
      *
      * @return {Promise<void>}
      */
-    HTML(){
+    async HTML(){
         return this.grab().then(val => {
             let text = val[0].sentence_text;
             return this.generateSentenceDiv(text);
@@ -361,6 +394,7 @@ class Store{
      */
     constructor(arr) {
         this.items = arr;
+        print("script.js 407: arr: ", this.items);
     }
 
     add(item){
