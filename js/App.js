@@ -46,6 +46,14 @@ class Section extends React.Component {
     }
 
     /**
+     * fetch item IDs from the API.
+     * @return {Promise<void>}
+     * @private
+     */
+    async _loadItemIDs(filter){
+
+    }
+    /**
      * initiate my store.
      * @return {Promise<void>}
      * @private
@@ -55,6 +63,7 @@ class Section extends React.Component {
     }
 
     /**
+     * load items from the _store.
      * @param n
      * @param recurse
      * @return {Promise<void>}
@@ -64,7 +73,6 @@ class Section extends React.Component {
 
     }
 
-    asyn
 
     /**
      * TODO event handler for undoing the result of onSearch()
@@ -301,7 +309,7 @@ class Section1 extends Section {
      * GET AN ARRAY OF ALL CLUSTER ID's
      * @return {Promise<*>}
      */
-    async _loadClusterIDs(){
+    async _loadItemIDs(){
         return this.props.q("clusters");
     }
 
@@ -312,7 +320,7 @@ class Section1 extends Section {
      */
     async _initiateStore(){
         const _ = this;
-        var clusterIDs = this._loadClusterIDs();
+        var clusterIDs = this._loadItemIDs();
         return clusterIDs.then(arr => {
             return new Store(arr);
         })
@@ -516,7 +524,7 @@ class Section2 extends Section {
      * grabs the ID's of all unclustered sentences , from the API.
      * @return {Promise<Array>}
      */
-    async loadUnclusteredSentenceIDs(){
+    async loadItemIDs(){
         const q = this.props.q;
         return q("unclusteredsentences");
     }
@@ -530,7 +538,7 @@ class Section2 extends Section {
      */
     async _initiateStore(){
         const _ = this;
-        var sentenceIDs = this.loadUnclusteredSentenceIDs();
+        var sentenceIDs = this.loadItemIDs();
         return sentenceIDs.then(arr => {
             return new Store(arr);
         })
