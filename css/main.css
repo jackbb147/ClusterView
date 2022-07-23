@@ -14,7 +14,7 @@
     --MAIN-SECTION-BODY-HEIGHT: calc(100% - var(--MAIN-SECTION-HEAD-HEIGHT));
 }
 
-.dontdisplay {
+.no-display-until-lg {
     display: none;
 }
 

@@ -5,7 +5,7 @@
         --MAIN-SECTION-HEAD-HEIGHT: 5%;
     }
 
-    .dontdisplay {
+    .no-display-until-lg {
         display: initial;
     }
 

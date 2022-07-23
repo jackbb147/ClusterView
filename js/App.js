@@ -97,7 +97,7 @@ class ClusterCard extends React.Component {
 
 
     render() {
-        let display = this.props.display ? "" : "dontdisplay"
+        let display = this.props.display ? "" : "no-display-until-lg"
         return (
             <div className={`ClusterCard ${display}`}>
                 <div className={"container_fluid"}>
@@ -118,9 +118,9 @@ class ClusterWrapper extends React.Component {
         return (
             <div className={"container_fluid clustersWrapper"}>
                 <div className="row">
-                    <LeftBtn></LeftBtn>
+                    <LeftBtn cb={this.props.leftBtnClick}></LeftBtn>
                     <ClustersBox>{this.props.children}</ClustersBox>
-                    <RightBtn></RightBtn>
+                    <RightBtn cb={this.props.rightBtnClick}></RightBtn>
                 </div>
             </div>
         )
@@ -134,16 +134,17 @@ class LeftBtn extends React.Component {
 
     handleClick(){
         print("clicked me ");
-        var current = document.querySelector(".ClusterCard:not(.dontdisplay)")
+        var current = document.querySelector(".ClusterCard:not(.no-display-until-lg)")
         var prev = current.previousElementSibling;
         if(prev=== null) return;
-        removeClass(prev, "dontdisplay");
-        addClass(current, "dontdisplay");
+        removeClass(prev, "no-display-until-lg");
+        addClass(current, "no-display-until-lg");
+        this.props.cb();
     }
 
     render() {
         return (
-            <div onClick={this.handleClick} className={"d-lg-none col col-1 leftBtn"}> {"<"} </div>
+            <div onClick={this.handleClick.bind(this)} className={"d-lg-none col col-1 leftBtn"}> {"<"} </div>
         )
     }
 }
@@ -155,16 +156,17 @@ class RightBtn extends React.Component {
 
     handleClick(){
         print("clicked me ");
-        var current = document.querySelector(".ClusterCard:not(.dontdisplay)")
+        var current = document.querySelector(".ClusterCard:not(.no-display-until-lg)")
         var next = current.nextElementSibling;
         if(next === null) return;
-        removeClass(next, "dontdisplay");
-        addClass(current, "dontdisplay");
+        removeClass(next, "no-display-until-lg");
+        addClass(current, "no-display-until-lg");
+        this.props.cb();
     }
 
     render() {
         return (
-            <div onClick={this.handleClick} className={"d-lg-none col col-1 rightBtn"}> {">"} </div>
+            <div onClick={this.handleClick.bind(this)} className={"d-lg-none col col-1 rightBtn"}> {">"} </div>
         )
     }
 }
@@ -176,16 +178,11 @@ class Section1 extends React.Component {
         this._clusterStore = undefined;
         this.state = {
             loadedCards: [], //loaded cluster cards,
+
         }
+        this._activeCardIndex = 0;//index of the card currently on display.
     }
 
-    _setInterval(cb){
-        this.interval = setInterval(cb, 1000)
-    }
-
-    _clearInterval(){
-        clearInterval(this.interval)
-    }
 
     /**
      *
@@ -250,7 +247,7 @@ class Section1 extends React.Component {
      * @param recurse if true, call itself to get more cards
      * @return {Promise<void>}
      */
-    async loadClusterCards(n, recurse){
+    async loadClusterCards(n=5, recurse=false){
         const _ = this;
         const loadedCount = this.state.loadedCards.length;
         if(loadedCount >= _._clusterStore.count()) return;
@@ -267,17 +264,35 @@ class Section1 extends React.Component {
             _.setState({
                 loadedCards: _.state.loadedCards
             })
-            if(recurse) _.loadClusterCards(n, true);
+            if(recurse) _.loadClusterCards(n);
         })
     }
 
+    onRightBtnClick(){
+
+        var currentindex = this._activeCardIndex;
+        if(currentindex + 1 < this._clusterStore.count()) this._activeCardIndex += 1;
+
+        print(this._activeCardIndex);
+        if((this.state.loadedCards.length - this._activeCardIndex) < 4){
+            print("278: loading more cards. ")
+            this.loadClusterCards()
+        }
+    }
+
+    onLeftBtnClick(){
+
+        var currentindex = this._activeCardIndex;
+        if(currentindex > 0) this._activeCardIndex -= 1;
+        print(this._activeCardIndex)
+    }
 
     render(){
         return (
             <div className={"row main_section1"}>
                 <SectionHead title="All Clusters"></SectionHead>
                 <SectionBody>
-                    <ClusterWrapper>
+                    <ClusterWrapper leftBtnClick={this.onLeftBtnClick.bind(this)} rightBtnClick={this.onRightBtnClick.bind(this)}>
                         {this.state.loadedCards.map((cardInfo, i) =>
 
                             <ClusterCard key={i}
@@ -397,7 +412,7 @@ class Section2 extends React.Component {
             _.setState({
                 loadedSentences: _.state.loadedSentences
             })
-            if(recurse) _.loadSentences(n, true);
+            if(recurse) _.loadSentences(n);
         })
     }
 
@@ -444,9 +459,7 @@ class Section2 extends React.Component {
         function f(){
             const classname = "."+this.classname;
             const el = document.querySelector(classname);
-            // print("445: ", el.scrollTop);
-            // print("446: ", el.clientHeight);
-            // print("447: ", el.scrollHeight);
+
             if(el.scrollTop  + el.clientHeight >= 0.8 * el.scrollHeight){
                 print("App.js 447: bottom reached!", _.loadSentences);
                 _.loadSentences();
