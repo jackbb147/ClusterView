@@ -53,6 +53,18 @@ class Section extends React.Component {
     }
 
     /**
+     * @param n
+     * @param recurse
+     * @return {Promise<void>}
+     * @private
+     */
+    async _loadItems(n=5, recurse=false){
+
+    }
+
+    asyn
+
+    /**
      * TODO event handler for undoing the result of onSearch()
      */
     onExitSearch(){
@@ -71,6 +83,7 @@ class Section extends React.Component {
         //TODO print the query function
         print("app.js 71: ", this.props.q);
         //TODO print the load method
+        // print("app.js 74: ", this.)
         //TODO print the box
         //TODO print the existing cards
 
@@ -318,7 +331,7 @@ class Section1 extends Section {
         _._initiateStore()
             .then(store => {
                 _._store = store;
-                _.loadClusterCards(3)
+                _._loadItems(3)
             })
     }
 
@@ -328,7 +341,7 @@ class Section1 extends Section {
      * @param recurse if true, call itself to get more cards
      * @return {Promise<void>}
      */
-    async loadClusterCards(n=5, recurse=false){
+    async _loadItems(n=5, recurse=false){
         const _ = this;
 
 
@@ -346,7 +359,7 @@ class Section1 extends Section {
             _.setState({
                 loadedItems: _.state.loadedItems
             })
-            if(recurse) _.loadClusterCards(n);
+            if(recurse) _._loadItems(n);
         })
     }
 
@@ -357,7 +370,7 @@ class Section1 extends Section {
         print("App.js 278: ", this._activeCardIndex);
         if((this.state.loadedItems.length - this._activeCardIndex) < 4){
             print("278: loading more cards. ")
-            this.loadClusterCards()
+            this._loadItems()
         }
     }
 
@@ -480,7 +493,7 @@ class Section2 extends Section {
      * @param recurse if true, call itself again to load n more.
      * @return {Promise<void>}
      */
-    async loadSentences(n=5, recurse=false){
+    async _loadItems(n=5, recurse=false){
         const _ = this;
         print("383: loadsentences called!")
 
@@ -499,7 +512,7 @@ class Section2 extends Section {
             _.setState({
                 loadedItems: _.state.loadedItems
             })
-            if(recurse) _.loadSentences(n);
+            if(recurse) _._loadItems(n);
         })
     }
 
@@ -535,7 +548,7 @@ class Section2 extends Section {
             .then(store => {
                 _._store = store;
                 print("section 2: ", store.getAll());
-                _.loadSentences(10, false);
+                _._loadItems(10, false);
 
             })
     }
@@ -548,8 +561,8 @@ class Section2 extends Section {
             const el = document.querySelector(classname);
 
             if(el.scrollTop  + el.clientHeight >= 0.8 * el.scrollHeight){
-                print("App.js 447: bottom reached!", _.loadSentences);
-                _.loadSentences();
+                print("App.js 447: bottom reached!", _._loadItems);
+                _._loadItems();
             }
 
         }
@@ -564,7 +577,7 @@ class Section2 extends Section {
             <div className={"row main_section2"}>
                 <SectionHead i={2} cb={this.onSearch.bind(this)} title="Unclustered Sentences"></SectionHead>
                 <SectionBody>
-                    <UnclusteredSentencesWrapper cb={(this.handleScroll)()} loadMore={()=>{_.loadSentences(5,false)}}>
+                    <UnclusteredSentencesWrapper cb={(this.handleScroll)()} loadMore={()=>{_._loadItems(5,false)}}>
                         {this.state.loadedItems.map((sentence, index) =>
                             <UnclusteredSentence key={index} text={sentence.sentence_text}></UnclusteredSentence>
                         )}
