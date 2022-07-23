@@ -10,6 +10,14 @@ class Store{
         this.items = arr;
     }
 
+    /**
+     * count how many items there are in the store.
+     * @return Number
+     */
+    count(){
+        return this.items.length;
+    }
+
     add(item){
         (this.items).push(item);
     }
@@ -23,12 +31,14 @@ class Store{
     }
 
     /**
-     * get the first n items. n must be <= number of items available.
+     * get n items, (optionally)skipping a few.
      * @param n
+     * @param skip how many to skip
      */
-    getSome(n){
+    getSome(n, skip){
+        if(skip === undefined) skip = 0;
         var ans = [];
-        for(var i = 0; i < n; i++) ans.push(this.items[i]);
+        for(var i = 0; i < n; i++) ans.push(this.items[i + skip]);
         return ans;
     }
 }

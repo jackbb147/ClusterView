@@ -1,6 +1,8 @@
 'use strict';
 
 
+// ----------- SECTION 1 ----------------
+
 class SectionHead extends React.Component {
     constructor(props) {
         super(props);
@@ -166,16 +168,23 @@ class RightBtn extends React.Component {
         )
     }
 }
-/**
- * The clusters view
- */
+
+
 class Section1 extends React.Component {
     constructor(props) {
         super(props);
         this._clusterStore = undefined;
         this.state = {
-            loadedCards: [] //loaded cluster cards
+            loadedCards: [], //loaded cluster cards,
         }
+    }
+
+    _setInterval(cb){
+        this.interval = setInterval(cb, 1000)
+    }
+
+    _clearInterval(){
+        clearInterval(this.interval)
     }
 
     /**
@@ -218,6 +227,11 @@ class Section1 extends React.Component {
         })
     }
 
+
+    /**
+     * AFTER MOUNTING, SILENTLY LOAD ALL
+     * CLUSTERS, 3 AT A TIME, UNTIL ALL IS LOADED.
+     */
     componentDidMount(){
         const _ = this;
         const q = this.props.q;
@@ -226,24 +240,35 @@ class Section1 extends React.Component {
             .then(store => {
                 _._clusterStore = store;
                 // print(store.getAll());
-                _.loadClusterCards(5)
-
+                _.loadClusterCards(3, true)
             })
     }
 
-    async loadClusterCards(n){
+    /**
+     * loads n more cards.
+     * @param n
+     * @param recurse if true, call itself to get more cards
+     * @return {Promise<void>}
+     */
+    async loadClusterCards(n, recurse){
         const _ = this;
-        const bunch = _._clusterStore.getSome(n);
+        const loadedCount = this.state.loadedCards.length;
+        if(loadedCount >= _._clusterStore.count()) return;
+
+        const bunch = _._clusterStore.getSome(n, loadedCount);
         var cardPromises = [];
         bunch.forEach(cluster => {
             cardPromises.push(_.buildCluster(cluster.id));
         })
 
+        //append new cards into existing array of loaded cards.
         Promise.all(cardPromises).then( vals => {
             print("139: ", vals);
+            _.state.loadedCards.push(...vals);
             _.setState({
-                loadedCards: vals
+                loadedCards: _.state.loadedCards
             })
+            if(recurse) _.loadClusterCards(n, true);
         })
     }
 
@@ -256,12 +281,12 @@ class Section1 extends React.Component {
                     <ClusterWrapper>
                         {this.state.loadedCards.map((cardInfo, i) =>
 
-                                <ClusterCard key={i}
-                                             title={cardInfo.title}
-                                             feedbacks={cardInfo.feedbacks}
-                                             display={i < 1}
-                                >
-                                </ClusterCard>
+                            <ClusterCard key={i}
+                                         title={cardInfo.title}
+                                         feedbacks={cardInfo.feedbacks}
+                                         display={i < 1}
+                            >
+                            </ClusterCard>
 
                         )}
                     </ClusterWrapper>
@@ -270,6 +295,11 @@ class Section1 extends React.Component {
         )
     }
 }
+
+
+
+
+// ----------- SECTION 2 ----------------
 
 class UnclusteredSentence extends React.Component {
     constructor(props) {
@@ -408,6 +438,10 @@ class Section2 extends React.Component {
     }
 }
 
+
+
+
+// ----------- APP ------------------------
 class App extends React.Component {
     /**
      *
