@@ -3,6 +3,8 @@
 
 const searchBarClassName = "searchBar"; //TODO: refactor this in section class itself
 // --------------------------------------
+const clustersBoxClassName = "clusters-box";    //TODO  refactoring
+const sentencesBoxClassName = "unclusteredSentencesWrapper"; //TODO refactoring
 
 class SearchBar extends React.Component {
     /**
@@ -40,7 +42,7 @@ class Section extends React.Component {
             loadedItems: [] //
         }
         this._store = undefined;
-
+        this._boxClassName = undefined;
     }
 
     /**
@@ -83,10 +85,11 @@ class Section extends React.Component {
         //TODO print the query function
         print("app.js 71: ", this.props.q);
         //TODO print the load method
-        // print("app.js 74: ", this.)
+        print("app.js 86: ", this._loadItems);
         //TODO print the box
+        print("app.js 90: ", this._boxClassName );
         //TODO print the existing cards
-
+        print("app.js 92: ", this.state.loadedItems);
     }
 }
 
@@ -270,12 +273,8 @@ class RightBtn extends React.Component {
 class Section1 extends Section {
     constructor(props) {
         super(props);
-        // this._clusterStore = undefined;
-        this.state = {
-            loadedItems: [], //loaded cluster cards,
-
-        }
         this._activeCardIndex = 0;//index of the card currently on display.
+        this._boxClassName = clustersBoxClassName;
     }
 
 
@@ -465,12 +464,9 @@ class UnclusteredSentencesWrapper extends React.Component {
  * The unclustered sentences view
  */
 class Section2 extends Section {
-    constructor() {
-        super();
-        this._store = undefined;
-        this.state = {
-            loadedItems: [] //loaded sentences
-        }
+    constructor(props) {
+        super(props);
+        this._boxClassName = sentencesBoxClassName;
     }
 
     /**
