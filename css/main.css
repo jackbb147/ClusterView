@@ -34,6 +34,12 @@ body {
     padding-right: 2rem;
 }
 
+.AppContainer {
+    width: 100%;
+    height: 100%;
+    /*background-color: red;*/
+}
+
 .main {
     border: var(--DBG-BORDER);
     height: 100%;

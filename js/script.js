@@ -263,7 +263,7 @@ class App {
         return this.fillSection(
             ".clusters-box",
             this._clusterStore,
-            2,
+            10,
             Cluster,
             N
         )
