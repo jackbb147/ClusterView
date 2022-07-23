@@ -5,6 +5,10 @@
         --MAIN-SECTION-HEAD-HEIGHT: 5%;
     }
 
+    .dontdisplay {
+        display: initial;
+    }
+
     .main {
         display: flex;
         justify-content: space-between;
@@ -18,8 +22,16 @@
 
     .clustersWrapper .col:nth-child(2){
         height: 100%;
+        width: 100%;
         margin: auto;
         overflow-y: scroll;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+    }
+
+    .ClusterCard {
+        margin-bottom: 5rem;
     }
 
 

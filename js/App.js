@@ -305,7 +305,9 @@ class UnclusteredSentencesWrapper extends React.Component {
 
     render(){
         return (
-            <div className={"container_fluid unclusteredSentencesWrapper hideScrollBar"}></div>
+            <div className={"container_fluid unclusteredSentencesWrapper hideScrollBar"}>
+                {this.props.children}
+            </div>
         )
     }
 }
@@ -316,14 +318,90 @@ class UnclusteredSentencesWrapper extends React.Component {
 class Section2 extends React.Component {
     constructor() {
         super();
+        this._sentenceStore = undefined;
+        this.state = {
+            loadedSentences: [] //loaded sentences
+        }
     }
+
+    /**
+     *
+     * @param clusterID
+     * @return
+     * @private
+     */
+    async buildSentence(sentenceID){
+        const q = this.props.q;
+        const sentence = q(`sentence/${sentenceID}`);
+
+        return sentence.then(val => val[0]);
+    }
+
+
+    async loadSentences(n){
+        const _ = this;
+        const bunch = _._sentenceStore.getSome(n);
+        var promises = [];
+        bunch.forEach(obj => {
+            promises.push(_.buildSentence(obj.id));
+        })
+
+        Promise.all(promises).then( vals => {
+            print("350: ", vals);
+            _.setState({
+                loadedSentences: vals
+            })
+        })
+    }
+
+    /**
+     * grabs the ID's of all unclustered sentences , from the API.
+     * @return {Promise<Array>}
+     */
+    async loadUnclusteredSentenceIDs(){
+        const q = this.props.q;
+        return q("unclusteredsentences");
+    }
+
+
+    /**
+     * load unclustered sentences(just the id objects) from the API,
+     * then initiate its store.
+     * check the API documentation for the format of each item.
+     * @private
+     */
+    async _initiateSentenceStore(){
+        const _ = this;
+        var sentenceIDs = this.loadUnclusteredSentenceIDs();
+        return sentenceIDs.then(arr => {
+            return new Store(arr);
+        })
+    }
+
+    componentDidMount(){
+        const _ = this;
+        const q = this.props.q;
+        print("I(SECTION2) MOUNTED!");
+        _._initiateSentenceStore()
+            .then(store => {
+                _._sentenceStore = store;
+                print("section 2: ", store.getAll());
+                _.loadSentences(10);
+
+            })
+    }
+
 
     render(){
         return (
             <div className={"row main_section2"}>
                 <SectionHead title="Unclustered Sentences"></SectionHead>
                 <SectionBody>
-                    <UnclusteredSentencesWrapper></UnclusteredSentencesWrapper>
+                    <UnclusteredSentencesWrapper>
+                        {this.state.loadedSentences.map((sentence, index) =>
+                            <UnclusteredSentence key={index} text={sentence.sentence_text}></UnclusteredSentence>
+                        )}
+                    </UnclusteredSentencesWrapper>
                 </SectionBody>
             </div>
         )
@@ -343,7 +421,7 @@ class App extends React.Component {
         return   (
             <div className={"container main"}>
                 <Section1 q={this.props.q}></Section1>
-                <Section2></Section2>
+                <Section2 q={this.props.q}></Section2>
             </div>
         )
     }
