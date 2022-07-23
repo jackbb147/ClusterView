@@ -134,12 +134,13 @@ class LeftBtn extends React.Component {
 
     handleClick(){
         print("clicked me ");
+        this.props.cb();
         var current = document.querySelector(".ClusterCard:not(.no-display-until-lg)")
         var prev = current.previousElementSibling;
         if(prev=== null) return;
         removeClass(prev, "no-display-until-lg");
         addClass(current, "no-display-until-lg");
-        this.props.cb();
+
     }
 
     render() {
@@ -156,12 +157,13 @@ class RightBtn extends React.Component {
 
     handleClick(){
         print("clicked me ");
+        this.props.cb();
         var current = document.querySelector(".ClusterCard:not(.no-display-until-lg)")
         var next = current.nextElementSibling;
         if(next === null) return;
         removeClass(next, "no-display-until-lg");
         addClass(current, "no-display-until-lg");
-        this.props.cb();
+
     }
 
     render() {
@@ -249,10 +251,11 @@ class Section1 extends React.Component {
      */
     async loadClusterCards(n=5, recurse=false){
         const _ = this;
-        const loadedCount = this.state.loadedCards.length;
-        if(loadedCount >= _._clusterStore.count()) return;
 
-        const bunch = _._clusterStore.getSome(n, loadedCount);
+
+        //TODO loadedCount may not be up to date! bug for duplicate..
+        const bunch = _._clusterStore.getSome(n);
+        if(bunch.length < 1) return;
         var cardPromises = [];
         bunch.forEach(cluster => {
             cardPromises.push(_.buildCluster(cluster.id));
@@ -271,9 +274,8 @@ class Section1 extends React.Component {
     onRightBtnClick(){
 
         var currentindex = this._activeCardIndex;
-        if(currentindex + 1 < this._clusterStore.count()) this._activeCardIndex += 1;
-
-        print(this._activeCardIndex);
+        if(currentindex + 1 < this.state.loadedCards.length) this._activeCardIndex++;
+        print("App.js 278: ", this._activeCardIndex);
         if((this.state.loadedCards.length - this._activeCardIndex) < 4){
             print("278: loading more cards. ")
             this.loadClusterCards()
@@ -396,11 +398,11 @@ class Section2 extends React.Component {
     async loadSentences(n=5, recurse=false){
         const _ = this;
         print("383: loadsentences called!")
-        const loadedCount = this.state.loadedSentences.length;
-        if(loadedCount >= _._sentenceStore.count()) return;
 
 
-        const bunch = _._sentenceStore.getSome(n, loadedCount);
+
+        const bunch = _._sentenceStore.getSome(n);
+        if(bunch.length < 1) return;
         var promises = [];
         bunch.forEach(obj => {
             promises.push(_.buildSentence(obj.id));

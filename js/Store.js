@@ -31,14 +31,17 @@ class Store{
     }
 
     /**
-     * get n items, (optionally)skipping a few.
+     * get n items out of the store, (optionally)skipping a few.
+     *
      * @param n
      * @param skip how many to skip
      */
     getSome(n, skip){
+        print("GET SOME() CALLED, STORE", this.items);
+        if(this.count() < 1) return [];
         if(skip === undefined) skip = 0;
         var ans = [];
-        for(var i = 0; i < n && (i + skip) < this.count(); i++) ans.push(this.items[i + skip]);
+        for(var i = 0; i < n && (i + skip) < this.count(); i++) ans.push(this.items.shift());
         return ans;
     }
 }
