@@ -140,10 +140,16 @@ body {
     display: flex;
     justify-content: end;
     border: 1px solid ;
+}
 
+.searchBar div {
+    margin-right: 0.5rem;
 }
 
 .searchBar_input input {
     width: 100%;
+}
 
+.searchBar_input {
+    width: 50%;
 }

@@ -26,6 +26,7 @@ class SearchBar extends React.Component {
                     <input type="text"/>
                 </div>
                 <div className={"searchBar_btn"} onClick={this.props.cb}>Search</div>
+                <div className={"searchBar_clear no-display"} onClick={this.props.cbClear}>Clear</div>
             </div>
         )
     }
@@ -154,7 +155,10 @@ class Section extends React.Component {
      * event handler for the search button.
      */
     onSearch(){
-
+        // clear out the temp items array, before loading it.
+        this.setState({
+            tempItems: []
+        });
         print("App.js 36", this , this.props.i);
         //TODO print the inputted text
         var field = document.querySelector(`.${searchBarClassName}-${this.props.i} > .${searchBarClassName}_input > input`);
@@ -339,7 +343,9 @@ class LeftBtn extends React.Component {
 
     render() {
         return (
-            <div onClick={this.handleClick.bind(this)} className={"d-lg-none col col-1 leftBtn"}> {"<"} </div>
+            <div  className={"d-lg-none col col-1 leftBtn"}>
+                <div onClick={this.handleClick.bind(this)}>{"<"}</div>
+            </div>
         )
     }
 }
@@ -362,7 +368,9 @@ class RightBtn extends React.Component {
 
     render() {
         return (
-            <div onClick={this.handleClick.bind(this)} className={"d-lg-none col col-1 rightBtn"}> {">"} </div>
+            <div  className={"d-lg-none col col-1 rightBtn"}>
+                <div onClick={this.handleClick.bind(this)}> {">"}</div>
+            </div>
         )
     }
 }
