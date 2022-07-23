@@ -7,6 +7,8 @@ const clustersBoxClassName = "clusters-box";    //TODO  refactoring
 const sentencesBoxClassName = "unclusteredSentencesWrapper"; //TODO refactoring
 const clusterEndpoint = "clusters";
 const sentencesEndpoint = "unclusteredsentences";
+const clusterClassName = "ClusterCard";
+const sentenceClassName = "unclustered-sentence";
 class SearchBar extends React.Component {
     /**
      * this.props.cb: callback function for search btn
@@ -41,10 +43,12 @@ class Section extends React.Component {
         super(props);
         this.state = {
             loadedItems: [],
-            tempItems: [] //temporary item storage (for search results, for example.)
+            tempItems: [], //temporary item storage (for search results, for example.)
+            displayTemp: false // if true, display temporary items.
         }
         this._store = undefined;
         this._boxClassName = undefined;
+        this._itemClassName = undefined;
         this._endpoint = undefined; //e.g. "api/endpoint"
     }
 
@@ -133,6 +137,20 @@ class Section extends React.Component {
     }
 
     /**
+     * hide/unhide all items currently on display, by toggling their display(hide -> display = none)
+     */
+    _toggleDisplayedItems(){
+        //TODO
+        print("app.js toggleDisplayedItems called!");
+        var currentDisplayTemp = this.state.displayTemp;
+        //
+        // document.querySelector("."+this._itemClassName).classList.toggle("no-display")
+        this.setState({
+            displayTemp: !currentDisplayTemp
+        })
+    }
+
+    /**
      * event handler for the search button.
      */
     onSearch(){
@@ -159,8 +177,13 @@ class Section extends React.Component {
                     this.setState(this.state);
         //TODO print the box
                     print("app.js 158: ", this._boxClassName );
+
         //TODO print the loaded temporary items.
                     print("app.js 160: ", this.state.tempItems);
+        //TODO hide current items
+                    this._toggleDisplayedItems();
+        //TODO load the temporary items into view.
+
                 })
         })
 
@@ -351,6 +374,7 @@ class Section1 extends Section {
         this._activeCardIndex = 0;//index of the card currently on display.
         this._boxClassName = clustersBoxClassName;
         this._endpoint = clusterEndpoint;
+        this._itemClassName = clusterClassName;
     }
 
 
@@ -417,12 +441,13 @@ class Section1 extends Section {
      */
     render(){
         const _ = this;
+        var items = this.state.displayTemp ? this.state.tempItems : this.state.loadedItems;
         return (
             <div className={"row main_section1"}>
                 <SectionHead i={1} cb={this.onSearch.bind(this)} title="All Clusters"></SectionHead>
                 <SectionBody>
                     <ClusterWrapper leftBtnClick={this.onLeftBtnClick.bind(this)} rightBtnClick={this.onRightBtnClick.bind(this)}>
-                        {this.state.loadedItems.map((cardInfo, i) =>
+                        {items.map((cardInfo, i) =>
 
                             <ClusterCard key={i}
                                          title={cardInfo.title}
@@ -498,6 +523,7 @@ class Section2 extends Section {
         super(props);
         this._boxClassName = sentencesBoxClassName;
         this._endpoint = sentencesEndpoint;
+        this._itemClassName = sentenceClassName;
     }
 
     /**
@@ -545,12 +571,13 @@ class Section2 extends Section {
 
     render(){
         const _ = this;
+        var items = this.state.displayTemp ? this.state.tempItems : this.state.loadedItems;
         return (
             <div className={"row main_section2"}>
                 <SectionHead i={2} cb={this.onSearch.bind(this)} title="Unclustered Sentences"></SectionHead>
                 <SectionBody>
                     <UnclusteredSentencesWrapper cb={(this.handleScroll)()} loadMore={()=>{_._loadItems(5,false)}}>
-                        {this.state.loadedItems.map((sentence, index) =>
+                        {items.map((sentence, index) =>
                             <UnclusteredSentence key={index} text={sentence.sentence_text}></UnclusteredSentence>
                         )}
                     </UnclusteredSentencesWrapper>
