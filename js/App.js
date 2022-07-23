@@ -58,6 +58,8 @@ class Section extends React.Component {
         let queryString = this._endpoint;
         if(filter){
             //TODO};
+            queryString += "/";
+            queryString += filter;
         }
         return this.props.q(queryString);
     }
@@ -66,11 +68,11 @@ class Section extends React.Component {
 
     /**INITIATE A CLUSTER STORE AND RETURN IT
      * check the API documentation for the format of each item.
-     * @private
+     *  @param filter: optional filter for loading item IDs.
      */
-    async _initiateStore(){
+    async _initiateStore(filter){
         const _ = this;
-        var itemIDs = this._loadItemIDs();
+        var itemIDs = this._loadItemIDs(filter);
         return itemIDs.then(arr => {
             return new Store(arr);
         })
@@ -108,7 +110,10 @@ class Section extends React.Component {
         //TODO print the query function
         print("app.js 71: ", this.props.q);
         //TODO do a query, but use the inputted text as a filter.
-
+        var prom = this._initiateStore(field.value);
+        prom.then(val => {
+            print("app.js 113: ", val);
+        })
         //TODO print the load method
         print("app.js 86: ", this._loadItems);
         //TODO print the box
