@@ -49,21 +49,33 @@ class Section extends React.Component {
 
     /**
      * fetch item IDs from the API.
+     * @param filter: (optional)  extra string to append to the queryString.
+     * The resulting query string is "_endpoint/filter"
      * @return {Promise<void>}
      * @private
      */
     async _loadItemIDs(filter){
-        return this.props.q(this._endpoint);
+        let queryString = this._endpoint;
+        if(filter){
+            //TODO};
+        }
+        return this.props.q(queryString);
     }
 
-    /**
-     * initiate my store.
-     * @return {Promise<void>}
+
+
+    /**INITIATE A CLUSTER STORE AND RETURN IT
+     * check the API documentation for the format of each item.
      * @private
      */
     async _initiateStore(){
-
+        const _ = this;
+        var itemIDs = this._loadItemIDs();
+        return itemIDs.then(arr => {
+            return new Store(arr);
+        })
     }
+
 
     /**
      * load items from the _store.
@@ -95,6 +107,8 @@ class Section extends React.Component {
         print("app.js 69: ", field.value);
         //TODO print the query function
         print("app.js 71: ", this.props.q);
+        //TODO do a query, but use the inputted text as a filter.
+
         //TODO print the load method
         print("app.js 86: ", this._loadItems);
         //TODO print the box
@@ -310,19 +324,6 @@ class Section1 extends Section {
     }
 
 
-    /**
-     * INITIATE A CLUSTER STORE AND RETURN IT
-     * @return {Promise<Store>}
-     * @private
-     */
-    async _initiateStore(){
-        const _ = this;
-        var clusterIDs = this._loadItemIDs();
-        return clusterIDs.then(arr => {
-            return new Store(arr);
-        })
-    }
-
 
     /**
      * AFTER MOUNTING, SILENTLY LOAD ALL
@@ -519,19 +520,7 @@ class Section2 extends Section {
     }
 
 
-    /**
-     * load unclustered sentences(just the id objects) from the API,
-     * then initiate its store.
-     * check the API documentation for the format of each item.
-     * @private
-     */
-    async _initiateStore(){
-        const _ = this;
-        var sentenceIDs = this._loadItemIDs();
-        return sentenceIDs.then(arr => {
-            return new Store(arr);
-        })
-    }
+
 
     componentDidMount(){
         const _ = this;
