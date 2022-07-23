@@ -78,6 +78,15 @@ class Section extends React.Component {
         })
     }
 
+    /**
+     *
+     * @param ID
+     * @return {Promise<void>}
+     * @private
+     */
+    async _buildItem(ID){
+
+    }
 
     /**
      * load items from the _store.
@@ -86,9 +95,33 @@ class Section extends React.Component {
      * @return {Promise<void>}
      * @private
      */
+    /**
+     * loads n more cards.
+     * @param n
+     * @param recurse if true, call itself to get more cards
+     * @return {Promise<void>}
+     */
     async _loadItems(n=5, recurse=false){
+        const _ = this;
+        const bunch = _._store.getSome(n);
+        if(bunch.length < 1) return;
+        var itemPromises = [];
+        bunch.forEach(item => {
+            itemPromises.push(_._buildItem(item.id));
+        })
 
+        //append new cards into existing array of loaded cards.
+        Promise.all(itemPromises).then( vals => {
+            _.state.loadedItems.push(...vals);
+            _.setState({
+                loadedItems: _.state.loadedItems
+            })
+            if(recurse) _._loadItems(n);
+        })
     }
+    // async _loadItems(n=5, recurse=false){
+    //
+    // }
 
 
     /**
@@ -315,7 +348,7 @@ class Section1 extends Section {
      * @return
      * @private
      */
-    async buildCluster(clusterID){
+    async _buildItem(clusterID){
         const q = this.props.q;
         const cluster = q(`cluster/${clusterID}`);
         const feedbacks = q(`clusterfeedbacks/${clusterID}`);
@@ -345,33 +378,7 @@ class Section1 extends Section {
             })
     }
 
-    /**
-     * loads n more cards.
-     * @param n
-     * @param recurse if true, call itself to get more cards
-     * @return {Promise<void>}
-     */
-    async _loadItems(n=5, recurse=false){
-        const _ = this;
 
-
-        //TODO loadedCount may not be up to date! bug for duplicate..
-        const bunch = _._store.getSome(n);
-        if(bunch.length < 1) return;
-        var cardPromises = [];
-        bunch.forEach(cluster => {
-            cardPromises.push(_.buildCluster(cluster.id));
-        })
-
-        //append new cards into existing array of loaded cards.
-        Promise.all(cardPromises).then( vals => {
-            _.state.loadedItems.push(...vals);
-            _.setState({
-                loadedItems: _.state.loadedItems
-            })
-            if(recurse) _._loadItems(n);
-        })
-    }
 
     onRightBtnClick(){
 
@@ -487,45 +494,12 @@ class Section2 extends Section {
      * @return
      * @private
      */
-    async buildSentence(sentenceID){
+    async _buildItem(sentenceID){
         const q = this.props.q;
         const sentence = q(`sentence/${sentenceID}`);
 
         return sentence.then(val => val[0]);
     }
-
-
-    /**
-     *
-     * @param n
-     * @param recurse if true, call itself again to load n more.
-     * @return {Promise<void>}
-     */
-    async _loadItems(n=5, recurse=false){
-        const _ = this;
-        print("383: loadsentences called!")
-
-
-
-        const bunch = _._store.getSome(n);
-        if(bunch.length < 1) return;
-        var promises = [];
-        bunch.forEach(obj => {
-            promises.push(_.buildSentence(obj.id));
-        })
-
-        Promise.all(promises).then( vals => {
-            print("350: ", vals);
-            _.state.loadedItems.push(...vals);
-            _.setState({
-                loadedItems: _.state.loadedItems
-            })
-            if(recurse) _._loadItems(n);
-        })
-    }
-
-
-
 
     componentDidMount(){
         const _ = this;
@@ -556,8 +530,7 @@ class Section2 extends Section {
 
         return f
     }
-
-
+    
     render(){
         const _ = this;
         return (
