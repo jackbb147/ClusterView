@@ -307,8 +307,7 @@ class Section1 extends Section {
         print("I(SECTION1) MOUNTED!");
         _._initiateStore()
             .then(store => {
-                _._clusterStore = store;
-                // print(store.getAll());
+                _._store = store;
                 _.loadClusterCards(3)
             })
     }
@@ -324,7 +323,7 @@ class Section1 extends Section {
 
 
         //TODO loadedCount may not be up to date! bug for duplicate..
-        const bunch = _._clusterStore.getSome(n);
+        const bunch = _._store.getSome(n);
         if(bunch.length < 1) return;
         var cardPromises = [];
         bunch.forEach(cluster => {
@@ -441,7 +440,7 @@ class UnclusteredSentencesWrapper extends React.Component {
 class Section2 extends Section {
     constructor() {
         super();
-        this._sentenceStore = undefined;
+        this._store = undefined;
         this.state = {
             loadedSentences: [] //loaded sentences
         }
@@ -473,7 +472,7 @@ class Section2 extends Section {
 
 
 
-        const bunch = _._sentenceStore.getSome(n);
+        const bunch = _._store.getSome(n);
         if(bunch.length < 1) return;
         var promises = [];
         bunch.forEach(obj => {
@@ -520,7 +519,7 @@ class Section2 extends Section {
         print("I(SECTION2) MOUNTED!");
         _._initiateStore()
             .then(store => {
-                _._sentenceStore = store;
+                _._store = store;
                 print("section 2: ", store.getAll());
                 _.loadSentences(10, false);
 
