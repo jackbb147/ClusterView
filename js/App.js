@@ -368,9 +368,20 @@ class Section2 extends React.Component {
     }
 
 
-    async loadSentences(n){
+    /**
+     *
+     * @param n
+     * @param recurse if true, call itself again to load n more.
+     * @return {Promise<void>}
+     */
+    async loadSentences(n, recurse){
         const _ = this;
-        const bunch = _._sentenceStore.getSome(n);
+
+        const loadedCount = this.state.loadedSentences.length;
+        if(loadedCount >= _._sentenceStore.count()) return;
+
+
+        const bunch = _._sentenceStore.getSome(n, loadedCount);
         var promises = [];
         bunch.forEach(obj => {
             promises.push(_.buildSentence(obj.id));
@@ -378,9 +389,11 @@ class Section2 extends React.Component {
 
         Promise.all(promises).then( vals => {
             print("350: ", vals);
+            _.state.loadedSentences.push(...vals);
             _.setState({
-                loadedSentences: vals
+                loadedSentences: _.state.loadedSentences
             })
+            if(recurse) _.loadSentences(n, true);
         })
     }
 
@@ -416,7 +429,7 @@ class Section2 extends React.Component {
             .then(store => {
                 _._sentenceStore = store;
                 print("section 2: ", store.getAll());
-                _.loadSentences(10);
+                _.loadSentences(10, true);
 
             })
     }

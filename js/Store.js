@@ -38,7 +38,7 @@ class Store{
     getSome(n, skip){
         if(skip === undefined) skip = 0;
         var ans = [];
-        for(var i = 0; i < n; i++) ans.push(this.items[i + skip]);
+        for(var i = 0; i < n && (i + skip) < this.count(); i++) ans.push(this.items[i + skip]);
         return ans;
     }
 }
