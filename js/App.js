@@ -88,22 +88,18 @@ class Section extends React.Component {
 
     }
 
+
     /**
-     * load items from the _store.
-     * @param n
-     * @param recurse
-     * @return {Promise<void>}
-     * @private
-     */
-    /**
-     * loads n more cards.
+     * loads n items
      * @param n
      * @param recurse if true, call itself to get more cards
+     * @param from (optional) a Store object to load from. If undefined, load from this._store instead.
      * @return {Promise<void>}
      */
-    async _loadItems(n=5, recurse=false){
+    async _loadItems(n=5, recurse=false, store){
         const _ = this;
-        const bunch = _._store.getSome(n);
+        if(store === undefined) store = this._store;
+        const bunch = store.getSome(n);
         if(bunch.length < 1) return;
         var itemPromises = [];
         bunch.forEach(item => {
@@ -530,7 +526,7 @@ class Section2 extends Section {
 
         return f
     }
-    
+
     render(){
         const _ = this;
         return (
