@@ -239,7 +239,7 @@ class Section1 extends React.Component {
             .then(store => {
                 _._clusterStore = store;
                 // print(store.getAll());
-                _.loadClusterCards(3, true)
+                _.loadClusterCards(3)
             })
     }
 
