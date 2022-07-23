@@ -5,7 +5,8 @@ const searchBarClassName = "searchBar"; //TODO: refactor this in section class i
 // --------------------------------------
 const clustersBoxClassName = "clusters-box";    //TODO  refactoring
 const sentencesBoxClassName = "unclusteredSentencesWrapper"; //TODO refactoring
-
+const clusterEndpoint = "clusters";
+const sentencesEndpoint = "unclusteredsentences";
 class SearchBar extends React.Component {
     /**
      * this.props.cb: callback function for search btn
@@ -43,6 +44,7 @@ class Section extends React.Component {
         }
         this._store = undefined;
         this._boxClassName = undefined;
+        this._endpoint = undefined; //e.g. "api/endpoint"
     }
 
     /**
@@ -51,8 +53,9 @@ class Section extends React.Component {
      * @private
      */
     async _loadItemIDs(filter){
-
+        return this.props.q(this._endpoint);
     }
+
     /**
      * initiate my store.
      * @return {Promise<void>}
@@ -283,6 +286,7 @@ class Section1 extends Section {
         super(props);
         this._activeCardIndex = 0;//index of the card currently on display.
         this._boxClassName = clustersBoxClassName;
+        this._endpoint = clusterEndpoint;
     }
 
 
@@ -305,13 +309,6 @@ class Section1 extends Section {
         })
     }
 
-    /**
-     * GET AN ARRAY OF ALL CLUSTER ID's
-     * @return {Promise<*>}
-     */
-    async _loadItemIDs(){
-        return this.props.q("clusters");
-    }
 
     /**
      * INITIATE A CLUSTER STORE AND RETURN IT
@@ -475,6 +472,7 @@ class Section2 extends Section {
     constructor(props) {
         super(props);
         this._boxClassName = sentencesBoxClassName;
+        this._endpoint = sentencesEndpoint;
     }
 
     /**
@@ -520,15 +518,6 @@ class Section2 extends Section {
         })
     }
 
-    /**
-     * grabs the ID's of all unclustered sentences , from the API.
-     * @return {Promise<Array>}
-     */
-    async loadItemIDs(){
-        const q = this.props.q;
-        return q("unclusteredsentences");
-    }
-
 
     /**
      * load unclustered sentences(just the id objects) from the API,
@@ -538,7 +527,7 @@ class Section2 extends Section {
      */
     async _initiateStore(){
         const _ = this;
-        var sentenceIDs = this.loadItemIDs();
+        var sentenceIDs = this._loadItemIDs();
         return sentenceIDs.then(arr => {
             return new Store(arr);
         })
