@@ -33,11 +33,12 @@ class Store{
     /**
      * get n items out of the store, (optionally)skipping a few.
      *
-     * @param n
+     * @param n if -1, get all.
      * @param skip how many to skip
      */
     getSome(n, skip){
         print("GET SOME() CALLED, STORE", this.items);
+        if(n < 0) return this.getAll()
         if(this.count() < 1) return [];
         if(skip === undefined) skip = 0;
         var ans = [];

@@ -40,7 +40,8 @@ class Section extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            loadedItems: [] //
+            loadedItems: [],
+            tempItems: [] //temporary item storage (for search results, for example.)
         }
         this._store = undefined;
         this._boxClassName = undefined;
@@ -93,31 +94,35 @@ class Section extends React.Component {
      * loads n items
      * @param n
      * @param recurse if true, call itself to get more cards
-     * @param from (optional) a Store object to load from. If undefined, load from this._store instead.
+     * @param from Object (optional) a Store object to load from. If undefined, load from this._store instead.
+     * @param to Array (optional) where to store the loaded items. If undefined, store in this.tate.loadedItems array.
      * @return {Promise<void>}
      */
-    async _loadItems(n=5, recurse=false, store){
+    async _loadItems(n=5, recurse=false, from, to){
         const _ = this;
-        if(store === undefined) store = this._store;
-        const bunch = store.getSome(n);
+        if(from === undefined) from = this._store;
+
+        const bunch = from.getSome(n);
         if(bunch.length < 1) return;
         var itemPromises = [];
         bunch.forEach(item => {
             itemPromises.push(_._buildItem(item.id));
         })
 
-        //append new cards into existing array of loaded cards.
-        Promise.all(itemPromises).then( vals => {
-            _.state.loadedItems.push(...vals);
-            _.setState({
-                loadedItems: _.state.loadedItems
-            })
+        //store the loaded items.
+        return Promise.all(itemPromises).then( vals => {
+            if(to === undefined){
+                _.state.loadedItems.push(...vals);
+                _.setState({
+                    loadedItems: _.state.loadedItems
+                })
+            }else{
+                to.push(...vals)
+            }
+
             if(recurse) _._loadItems(n);
         })
     }
-    // async _loadItems(n=5, recurse=false){
-    //
-    // }
 
 
     /**
@@ -140,15 +145,26 @@ class Section extends React.Component {
         print("app.js 71: ", this.props.q);
         //TODO do a query, but use the inputted text as a filter.
         var prom = this._initiateStore(field.value);
-        prom.then(val => {
-            print("app.js 113: ", val);
-        })
+        prom.then(store => {
+            print("app.js 113: ", store);
+
         //TODO print the load method
-        print("app.js 86: ", this._loadItems);
+            print("app.js 86: ", this._loadItems);
+        //TODO load the fetched items to some array.
+            this._loadItems(-1,
+                false,
+                store,
+                this.state.tempItems)
+                .then(val => {
+                    this.setState(this.state);
         //TODO print the box
-        print("app.js 90: ", this._boxClassName );
-        //TODO print the existing cards
-        print("app.js 92: ", this.state.loadedItems);
+                    print("app.js 158: ", this._boxClassName );
+        //TODO print the loaded temporary items.
+                    print("app.js 160: ", this.state.tempItems);
+                })
+        })
+
+
     }
 }
 
