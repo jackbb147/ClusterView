@@ -378,9 +378,9 @@ class Section2 extends React.Component {
      * @param recurse if true, call itself again to load n more.
      * @return {Promise<void>}
      */
-    async loadSentences(n, recurse){
+    async loadSentences(n=5, recurse=false){
         const _ = this;
-
+        print("383: loadsentences called!")
         const loadedCount = this.state.loadedSentences.length;
         if(loadedCount >= _._sentenceStore.count()) return;
 
@@ -439,15 +439,22 @@ class Section2 extends React.Component {
     }
 
     handleScroll(){
-
-        const classname = "."+this.classname;
-        const el = document.querySelector(classname);
-        // print("445: ", el.scrollTop);
-        // print("446: ", el.clientHeight);
-        // print("447: ", el.scrollHeight);
-        if(el.scrollTop  + el.clientHeight >= el.scrollHeight)
-        print("App.js 447: bottom reached!");
         //TODO TRIGGER A LOAD SENTENCE()
+        const _ = this;
+        function f(){
+            const classname = "."+this.classname;
+            const el = document.querySelector(classname);
+            // print("445: ", el.scrollTop);
+            // print("446: ", el.clientHeight);
+            // print("447: ", el.scrollHeight);
+            if(el.scrollTop  + el.clientHeight >= 0.8 * el.scrollHeight){
+                print("App.js 447: bottom reached!", _.loadSentences);
+                _.loadSentences();
+            }
+
+        }
+
+        return f
     }
 
 
@@ -457,7 +464,7 @@ class Section2 extends React.Component {
             <div className={"row main_section2"}>
                 <SectionHead title="Unclustered Sentences"></SectionHead>
                 <SectionBody>
-                    <UnclusteredSentencesWrapper cb={this.handleScroll} loadMore={()=>{_.loadSentences(5,false)}}>
+                    <UnclusteredSentencesWrapper cb={(this.handleScroll)()} loadMore={()=>{_.loadSentences(5,false)}}>
                         {this.state.loadedSentences.map((sentence, index) =>
                             <UnclusteredSentence key={index} text={sentence.sentence_text}></UnclusteredSentence>
                         )}
