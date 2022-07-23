@@ -6,7 +6,7 @@ class SearchBar extends React.Component {
     /**
      * this.props.cb: callback function for search btn
      * this.props.i: 1 or 2 (identifier used for classname)
-     * @param
+
      */
     constructor(props) {
         super(props);
@@ -25,16 +25,44 @@ class SearchBar extends React.Component {
 }
 
 //TODO some major refactoring needed for section1 and section2 to extend Section.
+//TODO each section has a _store variable, _initiateStore() method
 class Section extends React.Component {
     /**
+     * this.props.i: 1 or 2 (corresponding to section1 and section2)
+     * this.props.q: the query() method.
      * @param props
      */
     constructor(props) {
         super(props);
+        this._store = undefined;
     }
 
+    /**
+     * initiate my store.
+     * @return {Promise<void>}
+     * @private
+     */
+    async _initiateStore(){
+
+    }
+
+    /**
+     * TODO event handler for undoing the result of onSearch()
+     */
+    onExitSearch(){
+
+    }
+
+    /**
+     * event handler for the search button.
+     */
     onSearch(){
-        print("App.js 36", this);
+        print("App.js 36", this.props.i);
+        //TODO print the inputted text
+        //TODO print the query function
+        //TODO print the load method
+        //TODO print the box
+        //TODO print the existing cards
 
     }
 }
@@ -219,7 +247,7 @@ class RightBtn extends React.Component {
 class Section1 extends Section {
     constructor(props) {
         super(props);
-        this._clusterStore = undefined;
+        // this._clusterStore = undefined;
         this.state = {
             loadedCards: [], //loaded cluster cards,
 
@@ -260,7 +288,7 @@ class Section1 extends Section {
      * @return {Promise<Store>}
      * @private
      */
-    async _initiateClusterStore(){
+    async _initiateStore(){
         const _ = this;
         var clusterIDs = this._loadClusterIDs();
         return clusterIDs.then(arr => {
@@ -277,7 +305,7 @@ class Section1 extends Section {
         const _ = this;
         const q = this.props.q;
         print("I(SECTION1) MOUNTED!");
-        _._initiateClusterStore()
+        _._initiateStore()
             .then(store => {
                 _._clusterStore = store;
                 // print(store.getAll());
@@ -478,7 +506,7 @@ class Section2 extends Section {
      * check the API documentation for the format of each item.
      * @private
      */
-    async _initiateSentenceStore(){
+    async _initiateStore(){
         const _ = this;
         var sentenceIDs = this.loadUnclusteredSentenceIDs();
         return sentenceIDs.then(arr => {
@@ -490,7 +518,7 @@ class Section2 extends Section {
         const _ = this;
         const q = this.props.q;
         print("I(SECTION2) MOUNTED!");
-        _._initiateSentenceStore()
+        _._initiateStore()
             .then(store => {
                 _._sentenceStore = store;
                 print("section 2: ", store.getAll());
@@ -550,8 +578,8 @@ class App extends React.Component {
     render() {
         return   (
             <div className={"container main"}>
-                <Section1 q={this.props.q}></Section1>
-                <Section2 q={this.props.q}></Section2>
+                <Section1 i={1} q={this.props.q}></Section1>
+                <Section2 i={2} q={this.props.q}></Section2>
             </div>
         )
     }
