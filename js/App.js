@@ -20,7 +20,7 @@ class SearchBar extends React.Component {
                 <div className={"searchBar_input"}>
                     <input type="text"/>
                 </div>
-                <div className={"searchBar_btn"} onClick={this.props.cb.bind(this)}>Search</div>
+                <div className={"searchBar_btn"} onClick={this.props.cb}>Search</div>
             </div>
         )
     }
@@ -63,11 +63,13 @@ class Section extends React.Component {
      * event handler for the search button.
      */
     onSearch(){
-        print("App.js 36", this.props.i);
+
+        print("App.js 36", this , this.props.i);
         //TODO print the inputted text
         var field = document.querySelector(`.${searchBarClassName}-${this.props.i} > .${searchBarClassName}_input > input`);
         print("app.js 69: ", field.value);
         //TODO print the query function
+        print("app.js 71: ", this.props.q);
         //TODO print the load method
         //TODO print the box
         //TODO print the existing cards
@@ -367,11 +369,15 @@ class Section1 extends Section {
     }
 
 
+    /**
+     * //TODO refactor this into Section Class. Same with Section2
+     * @return {JSX.Element}
+     */
     render(){
         const _ = this;
         return (
             <div className={"row main_section1"}>
-                <SectionHead i={1} cb={this.onSearch} title="All Clusters"></SectionHead>
+                <SectionHead i={1} cb={this.onSearch.bind(this)} title="All Clusters"></SectionHead>
                 <SectionBody>
                     <ClusterWrapper leftBtnClick={this.onLeftBtnClick.bind(this)} rightBtnClick={this.onRightBtnClick.bind(this)}>
                         {this.state.loadedItems.map((cardInfo, i) =>
@@ -556,7 +562,7 @@ class Section2 extends Section {
         const _ = this;
         return (
             <div className={"row main_section2"}>
-                <SectionHead i={2} cb={this.onSearch} title="Unclustered Sentences"></SectionHead>
+                <SectionHead i={2} cb={this.onSearch.bind(this)} title="Unclustered Sentences"></SectionHead>
                 <SectionBody>
                     <UnclusteredSentencesWrapper cb={(this.handleScroll)()} loadMore={()=>{_.loadSentences(5,false)}}>
                         {this.state.loadedItems.map((sentence, index) =>
