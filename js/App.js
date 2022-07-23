@@ -1,5 +1,7 @@
 'use strict';
 
+
+const searchBarClassName = "searchBar"; //TODO: refactor this in section class itself
 // --------------------------------------
 
 class SearchBar extends React.Component {
@@ -14,7 +16,7 @@ class SearchBar extends React.Component {
 
     render(){
         return (
-            <div className={`searchBar searchBar-${this.props.i}`}>
+            <div className={`${searchBarClassName} ${searchBarClassName}-${this.props.i}`}>
                 <div className={"searchBar_input"}>
                     <input type="text"/>
                 </div>
@@ -63,6 +65,8 @@ class Section extends React.Component {
     onSearch(){
         print("App.js 36", this.props.i);
         //TODO print the inputted text
+        var field = document.querySelector(`.${searchBarClassName}-${this.props.i} > .${searchBarClassName}_input > input`);
+        print("app.js 69: ", field.value);
         //TODO print the query function
         //TODO print the load method
         //TODO print the box
