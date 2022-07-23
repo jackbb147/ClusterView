@@ -263,7 +263,6 @@ class Section1 extends React.Component {
 
         //append new cards into existing array of loaded cards.
         Promise.all(cardPromises).then( vals => {
-            print("139: ", vals);
             _.state.loadedCards.push(...vals);
             _.setState({
                 loadedCards: _.state.loadedCards
@@ -331,11 +330,16 @@ class SectionBody extends React.Component {
 class UnclusteredSentencesWrapper extends React.Component {
     constructor(props) {
         super(props);
+        this.classname = "unclusteredSentencesWrapper"
     }
 
+
     render(){
+        const _ = this;
         return (
-            <div className={"container_fluid unclusteredSentencesWrapper hideScrollBar"}>
+            <div
+                onScroll={this.props.cb.bind(this)}
+                 className={"container_fluid unclusteredSentencesWrapper hideScrollBar"}>
                 {this.props.children}
             </div>
         )
@@ -429,18 +433,31 @@ class Section2 extends React.Component {
             .then(store => {
                 _._sentenceStore = store;
                 print("section 2: ", store.getAll());
-                _.loadSentences(10, true);
+                _.loadSentences(10, false);
 
             })
     }
 
+    handleScroll(){
+
+        const classname = "."+this.classname;
+        const el = document.querySelector(classname);
+        // print("445: ", el.scrollTop);
+        // print("446: ", el.clientHeight);
+        // print("447: ", el.scrollHeight);
+        if(el.scrollTop  + el.clientHeight >= el.scrollHeight)
+        print("App.js 447: bottom reached!");
+        //TODO TRIGGER A LOAD SENTENCE()
+    }
+
 
     render(){
+        const _ = this;
         return (
             <div className={"row main_section2"}>
                 <SectionHead title="Unclustered Sentences"></SectionHead>
                 <SectionBody>
-                    <UnclusteredSentencesWrapper>
+                    <UnclusteredSentencesWrapper cb={this.handleScroll} loadMore={()=>{_.loadSentences(5,false)}}>
                         {this.state.loadedSentences.map((sentence, index) =>
                             <UnclusteredSentence key={index} text={sentence.sentence_text}></UnclusteredSentence>
                         )}
