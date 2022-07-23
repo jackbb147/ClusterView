@@ -46,32 +46,40 @@ class ClusterCard extends React.Component {
     }
 }
 
-class Section1Body extends React.Component {
-    constructor() {
-        super();
+class ClusterWrapper extends React.Component {
+    constructor(props) {
+        super(props);
     }
 
     render(){
         return (
-            <div className={"col-12 section_body"}>
-                <div className={"container_fluid clustersWrapper"}>
-                    <div className="row">
-                        <div className={"d-lg-none col col-1 leftBtn"}></div>
-                        <ClustersBox></ClustersBox>
-                        <div className={"d-lg-none col col-1 rightBtn"}></div>
-                    </div>
+            <div className={"container_fluid clustersWrapper"}>
+                <div className="row">
+                    <div className={"d-lg-none col col-1 leftBtn"}></div>
+                    <ClustersBox></ClustersBox>
+                    <div className={"d-lg-none col col-1 rightBtn"}></div>
                 </div>
             </div>
         )
     }
 }
 
+
+
 /**
  * The clusters view
  */
 class Section1 extends React.Component {
-    constructor() {
-        super();
+    constructor(props) {
+        super(props);
+    }
+
+    componentDidMount(){
+        const q = this.props.q;
+        print("I(SECTION1) MOUNTED!");
+        q("cluster/46914").then(value => {
+            print(value);
+        })
     }
 
 
@@ -79,7 +87,9 @@ class Section1 extends React.Component {
         return (
             <div className={"row main_section1"}>
                 <SectionHead title="All Clusters"></SectionHead>
-                <Section1Body></Section1Body>
+                <SectionBody>
+                    <ClusterWrapper></ClusterWrapper>
+                </SectionBody>
             </div>
         )
     }
@@ -98,7 +108,7 @@ class UnclusteredSentence extends React.Component {
 
 }
 
-class Section2Body extends React.Component {
+class SectionBody extends React.Component {
     constructor(props) {
         super(props);
     }
@@ -106,8 +116,20 @@ class Section2Body extends React.Component {
     render(){
         return (
             <div className={"col-12 section_body"}>
-                <div className={"container_fluid unclusteredSentencesWrapper hideScrollBar"}></div>
+                {this.props.children}
             </div>
+        )
+    }
+}
+
+class UnclusteredSentencesWrapper extends React.Component {
+    constructor(props) {
+        super(props);
+    }
+
+    render(){
+        return (
+            <div className={"container_fluid unclusteredSentencesWrapper hideScrollBar"}></div>
         )
     }
 }
@@ -124,32 +146,40 @@ class Section2 extends React.Component {
         return (
             <div className={"row main_section2"}>
                 <SectionHead title="Unclustered Sentences"></SectionHead>
-                <Section2Body></Section2Body>
+                <SectionBody>
+                    <UnclusteredSentencesWrapper></UnclusteredSentencesWrapper>
+                </SectionBody>
             </div>
         )
     }
 }
 
 class App extends React.Component {
+    /**
+     *
+     * @param props {q: query }
+     */
     constructor(props) {
         super(props);
-        this.state = { liked: false };
     }
 
     render() {
-        if (this.state.liked) {
-            return 'You liked this.';
-        }
-
         return   (
             <div className={"container main"}>
-                <Section1></Section1>
+                <Section1 q={this.props.q}></Section1>
                 <Section2></Section2>
             </div>
         )
     }
 }
 
+async function q(endpoint, params={}){
+    return fetch(`http://localhost:1700/api/${endpoint}`, params)
+        .then(res => res.json())
+        .then(val => {
+            return val;
+        })
+}
 const domContainer = document.querySelector('.AppContainer');
 const root = ReactDOM.createRoot(domContainer);
-root.render(<App></App>);
+root.render(<App q={q}></App>);
