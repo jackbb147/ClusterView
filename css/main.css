@@ -14,6 +14,10 @@
     --MAIN-SECTION-BODY-HEIGHT: calc(100% - var(--MAIN-SECTION-HEAD-HEIGHT));
 }
 
+.no-display {
+    display: none;
+}
+
 .no-display-until-lg {
     display: none;
 }
@@ -130,4 +134,16 @@ body {
 
 .hideScrollBar::-webkit-scrollbar {
     display: none; /* for Chrome, Safari, and Opera */
+}
+
+.searchBar {
+    display: flex;
+    justify-content: end;
+    border: 1px solid ;
+
+}
+
+.searchBar_input input {
+    width: 100%;
+
 }

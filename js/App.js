@@ -1,9 +1,51 @@
 'use strict';
 
+// --------------------------------------
+
+class SearchBar extends React.Component {
+    /**
+     * this.props.cb: callback function for search btn
+     * this.props.i: 1 or 2 (identifier used for classname)
+     * @param
+     */
+    constructor(props) {
+        super(props);
+    }
+
+    render(){
+        return (
+            <div className={`searchBar searchBar-${this.props.i}`}>
+                <div className={"searchBar_input"}>
+                    <input type="text"/>
+                </div>
+                <div className={"searchBar_btn"} onClick={this.props.cb.bind(this)}>Search</div>
+            </div>
+        )
+    }
+}
+
+//TODO some major refactoring needed for section1 and section2 to extend Section.
+class Section extends React.Component {
+    /**
+     * @param props
+     */
+    constructor(props) {
+        super(props);
+    }
+
+    onSearch(){
+        print("App.js 36", this);
+
+    }
+}
 
 // ----------- SECTION 1 ----------------
 
 class SectionHead extends React.Component {
+    /**
+     * this.props.cb: callback function passed to search btn.
+     * @param props
+     */
     constructor(props) {
         super(props);
     }
@@ -13,7 +55,7 @@ class SectionHead extends React.Component {
             <div className={"col-12 section_head"}>
                 <div className={"container_fluid"}>
                     <div>{this.props.title}</div>
-                    <div className="searchBar">Search</div>
+                    <SearchBar i={this.props.i} cb={this.props.cb}></SearchBar>
                 </div>
             </div>
         )
@@ -174,7 +216,7 @@ class RightBtn extends React.Component {
 }
 
 
-class Section1 extends React.Component {
+class Section1 extends Section {
     constructor(props) {
         super(props);
         this._clusterStore = undefined;
@@ -187,7 +229,7 @@ class Section1 extends React.Component {
 
 
     /**
-     *
+     * grab the feedback entries associated to a cluster.
      * @param clusterID
      * @return
      * @private
@@ -289,10 +331,12 @@ class Section1 extends React.Component {
         print(this._activeCardIndex)
     }
 
+
     render(){
+        const _ = this;
         return (
             <div className={"row main_section1"}>
-                <SectionHead title="All Clusters"></SectionHead>
+                <SectionHead i={1} cb={this.onSearch} title="All Clusters"></SectionHead>
                 <SectionBody>
                     <ClusterWrapper leftBtnClick={this.onLeftBtnClick.bind(this)} rightBtnClick={this.onRightBtnClick.bind(this)}>
                         {this.state.loadedCards.map((cardInfo, i) =>
@@ -366,7 +410,7 @@ class UnclusteredSentencesWrapper extends React.Component {
 /**
  * The unclustered sentences view
  */
-class Section2 extends React.Component {
+class Section2 extends Section {
     constructor() {
         super();
         this._sentenceStore = undefined;
@@ -477,7 +521,7 @@ class Section2 extends React.Component {
         const _ = this;
         return (
             <div className={"row main_section2"}>
-                <SectionHead title="Unclustered Sentences"></SectionHead>
+                <SectionHead i={2} cb={this.onSearch} title="Unclustered Sentences"></SectionHead>
                 <SectionBody>
                     <UnclusteredSentencesWrapper cb={(this.handleScroll)()} loadMore={()=>{_.loadSentences(5,false)}}>
                         {this.state.loadedSentences.map((sentence, index) =>
