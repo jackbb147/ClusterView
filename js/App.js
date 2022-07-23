@@ -34,7 +34,11 @@ class Section extends React.Component {
      */
     constructor(props) {
         super(props);
+        this.state = {
+            loadedItems: [] //
+        }
         this._store = undefined;
+
     }
 
     /**
@@ -249,7 +253,7 @@ class Section1 extends Section {
         super(props);
         // this._clusterStore = undefined;
         this.state = {
-            loadedCards: [], //loaded cluster cards,
+            loadedItems: [], //loaded cluster cards,
 
         }
         this._activeCardIndex = 0;//index of the card currently on display.
@@ -332,9 +336,9 @@ class Section1 extends Section {
 
         //append new cards into existing array of loaded cards.
         Promise.all(cardPromises).then( vals => {
-            _.state.loadedCards.push(...vals);
+            _.state.loadedItems.push(...vals);
             _.setState({
-                loadedCards: _.state.loadedCards
+                loadedItems: _.state.loadedItems
             })
             if(recurse) _.loadClusterCards(n);
         })
@@ -343,9 +347,9 @@ class Section1 extends Section {
     onRightBtnClick(){
 
         var currentindex = this._activeCardIndex;
-        if(currentindex + 1 < this.state.loadedCards.length) this._activeCardIndex++;
+        if(currentindex + 1 < this.state.loadedItems.length) this._activeCardIndex++;
         print("App.js 278: ", this._activeCardIndex);
-        if((this.state.loadedCards.length - this._activeCardIndex) < 4){
+        if((this.state.loadedItems.length - this._activeCardIndex) < 4){
             print("278: loading more cards. ")
             this.loadClusterCards()
         }
@@ -366,7 +370,7 @@ class Section1 extends Section {
                 <SectionHead i={1} cb={this.onSearch} title="All Clusters"></SectionHead>
                 <SectionBody>
                     <ClusterWrapper leftBtnClick={this.onLeftBtnClick.bind(this)} rightBtnClick={this.onRightBtnClick.bind(this)}>
-                        {this.state.loadedCards.map((cardInfo, i) =>
+                        {this.state.loadedItems.map((cardInfo, i) =>
 
                             <ClusterCard key={i}
                                          title={cardInfo.title}
@@ -442,7 +446,7 @@ class Section2 extends Section {
         super();
         this._store = undefined;
         this.state = {
-            loadedSentences: [] //loaded sentences
+            loadedItems: [] //loaded sentences
         }
     }
 
@@ -481,9 +485,9 @@ class Section2 extends Section {
 
         Promise.all(promises).then( vals => {
             print("350: ", vals);
-            _.state.loadedSentences.push(...vals);
+            _.state.loadedItems.push(...vals);
             _.setState({
-                loadedSentences: _.state.loadedSentences
+                loadedItems: _.state.loadedItems
             })
             if(recurse) _.loadSentences(n);
         })
@@ -551,7 +555,7 @@ class Section2 extends Section {
                 <SectionHead i={2} cb={this.onSearch} title="Unclustered Sentences"></SectionHead>
                 <SectionBody>
                     <UnclusteredSentencesWrapper cb={(this.handleScroll)()} loadMore={()=>{_.loadSentences(5,false)}}>
-                        {this.state.loadedSentences.map((sentence, index) =>
+                        {this.state.loadedItems.map((sentence, index) =>
                             <UnclusteredSentence key={index} text={sentence.sentence_text}></UnclusteredSentence>
                         )}
                     </UnclusteredSentencesWrapper>
