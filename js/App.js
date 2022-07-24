@@ -129,8 +129,8 @@ class Section extends React.Component {
      * @return {Promise<void>}
      * @private
      */
-    async _loadItem(){
-
+    async _loadItem(itemID, to){
+        //TODO
     }
     /**
      * loads n items
@@ -378,8 +378,13 @@ class ClusterCardFeedbackEntry extends React.Component {
      * callback for remove feedback
      */
     onRemove(){
-        print("381: onRemove called, feedback id: ", this.props.id);
+        var clusterID = this.props.clusterID || -666;   //TODO
+        var sentenceID = this.props.id;
+        var clusterIndex = this.props.clusterIndex;
+        print("381: onRemove called: ", clusterID, sentenceID, clusterIndex);
 
+
+        this.props.cb(clusterID, sentenceID, clusterIndex);
         //TODO
     }
 
@@ -435,12 +440,15 @@ class ClusterCardBody extends React.Component {
                         this.props.feedbacks.map(fb =>{
                             let textNid = _._processText(fb);
                             if(!(textNid[1] === undefined))
+
                                 return <ClusterCardFeedbackEntry
-                                    key={i++}
+                                    key={i}
                                     text={textNid[0]}
-                                    id={textNid[1]}
+                                    id={textNid[1]} //sentenceID
+                                    clusterID={this.props.clusterID}
                                     cb={this.props.removeCB}
-                                    index={i}
+                                    index={i++}
+                                    clusterIndex={this.props.clusterIndex}
                                 />
                         }
                         )
@@ -475,6 +483,8 @@ class ClusterCard extends React.Component {
                     <ClusterCardBody
                         feedbacks={this.props.feedbacks}
                         removeCB={this.props.removeCB}
+                        clusterID={this.props.id}
+                        clusterIndex={this.props.index}
                     />
                 </div>
             </div>
@@ -601,7 +611,7 @@ class Section1 extends Section {
     /**
      * grab the feedback entries associated to a cluster.
      * @param clusterID
-     * @return
+     * @return Object {title, feedbacks, accepted, id, ...}
      * @private
      */
     async _buildItem(clusterID){
@@ -657,6 +667,7 @@ class Section1 extends Section {
     }
 
     /**
+     * TODO Some major refactoring can be done on the toggler function.
      * the call back function for accept/unaccept btn.
      * sends an API
      * @return function
@@ -715,11 +726,48 @@ class Section1 extends Section {
      * for removing a feedback entry from a cluster card.
      */
     onRemoveFeedback(){
+        const _ = this;
+        const q = _.props.q;
 
-        print("683: remove feedback called");
 
-        function f(){
 
+        function f(clusterID, sentenceID, cardIndex){
+            print("729: remove feedback called with: ", clusterID, sentenceID, cardIndex);
+            //send a remove query to the API
+            var v = true;
+            if(clusterID != -666 && v){ 
+                q(`removesentence/${clusterID}/${sentenceID}`)
+                    .then (val => {
+                        _._buildItem(clusterID).then(cluster => {
+                            //TODO
+                            let index = cardIndex;
+                            print("637: updated cluster: ", cluster)
+                            //TODO 2. swap this with the old one in the current items array.
+                            let items = _.state.displayTemp ? _.state.tempItems : _.state.loadedItems;
+                            items[index] = cluster;
+                            //TODO 2 then setstate to trigger a rerendering.
+                            if(_.state.displayTemp) {
+                                _.setState({
+                                    tempItems: items
+                                })
+                            }else{
+                                _.setState({
+                                    loadedItems: items
+                                })
+                            }
+
+
+                        })
+                    })
+            }
+            //
+            // var itemPromise = _._buildItem(itemID);
+            // itemPromise.then( item => {
+            //
+            // })
+            //on resolve, fetch the cluster
+
+                // on resolve, set state
         }
 
         return f;
