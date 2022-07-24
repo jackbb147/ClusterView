@@ -72,6 +72,7 @@ class Section extends React.Component {
         this._itemClassName = undefined;
         this._title = undefined;
         this._endpoint = undefined; //e.g. "api/endpoint"
+        this._gettingSome = false;
     }
 
     /**
@@ -126,8 +127,10 @@ class Section extends React.Component {
      */
     async _loadItems(n=5, recurse=false, from, to){
         const _ = this;
+        if(_._gettingSome) return; // do not get some when we are still getting some.
         if(from === undefined) from = this._store;
 
+        _._gettingSome = true;
         const bunch = from.getSome(n);
         if(bunch.length < 1) return;
         var itemPromises = [];
@@ -145,6 +148,7 @@ class Section extends React.Component {
             }else{
                 to.push(...vals)
             }
+            _._gettingSome = false;
 
             if(recurse) _._loadItems(n);
         })
@@ -152,14 +156,29 @@ class Section extends React.Component {
 
 
     /**
-     * TODO event handler for undoing the result of onSearch()
+     * returns a callback function that can be passed down
+     * to a component that needs lazy-loading.
+     * @return {f}
+     * @private
      */
-    onClear(){
-        print("145: onClear called");
-        //TODO (may actually not be necessary to clear the temp items at this point.)
-        this._toggleDisplayedItems();
+    _handleScroll(){
+        //TODO TRIGGER A LOAD ITEM ()
+        const _ = this;
 
+        function f(){
+            const classname = "."+this.classname;
+            const el = document.querySelector(classname);
+
+            if(el.scrollTop  + el.clientHeight >= 0.8 * el.scrollHeight){
+                // print("App.js 168: bottom reached!", _._loadItems);
+                _._loadItems();
+            }
+
+        }
+
+        return f
     }
+
 
     /**
      * hide/unhide all items currently on display, by toggling their display(hide -> display = none)
@@ -175,6 +194,30 @@ class Section extends React.Component {
         })
     }
 
+    _displayTempItems(){
+        this.setState({
+            displayTemp: true
+        })
+    }
+
+
+    _displayLoadedItems(){
+        this.setState({
+            displayTemp: false
+        })
+    }
+
+
+    /**
+     * TODO event handler for undoing the result of onSearch()
+     */
+    onClear(){
+
+        print("145: onClear called");
+
+        this._displayLoadedItems();
+
+    }
 
     /**
      * event handler for the search button.
@@ -211,7 +254,7 @@ class Section extends React.Component {
         //TODO print the loaded temporary items.
                     print("app.js 160: ", this.state.tempItems);
         //TODO hide current items
-                    this._toggleDisplayedItems();
+                    this._displayTempItems();
         //TODO load the temporary items into view.
 
                 })
@@ -246,11 +289,13 @@ class SectionHead extends React.Component {
 class ClustersBox extends React.Component {
     constructor(props) {
         super(props);
+        this.classname = clustersBoxClassName;
     }
 
     render(){
+        const _ = this;
         return (
-            <div className="col col-10 hideScrollBar clusters-box">
+            <div onScroll={_.props.scrollcb.bind(_)} className="col col-10 hideScrollBar clusters-box">
                 {this.props.children}
             </div>
         )
@@ -338,11 +383,12 @@ class ClusterWrapper extends React.Component {
     }
 
     render(){
+        const _ = this;
         return (
-            <div className={"container_fluid clustersWrapper"}>
-                <div className="row">
+            <div  className={"container_fluid clustersWrapper"}>
+                <div className="row" >
                     <LeftBtn cb={this.props.leftBtnClick}></LeftBtn>
-                    <ClustersBox>{this.props.children}</ClustersBox>
+                    <ClustersBox scrollcb={_.props.scrollcb}>{this.props.children}</ClustersBox>
                     <RightBtn cb={this.props.rightBtnClick}></RightBtn>
                 </div>
             </div>
@@ -404,10 +450,41 @@ class RightBtn extends React.Component {
 class Section1 extends Section {
     constructor(props) {
         super(props);
-        this._activeCardIndex = 0;//index of the card currently on display.
+        this.state._activeCardIndex = 0;
+
         this._boxClassName = clustersBoxClassName;
         this._endpoint = clusterEndpoint;
         this._itemClassName = clusterClassName;
+    }
+
+
+    /**
+     * resets the active item index to 0.
+     * @private
+     */
+    _resetIndex(){
+        this.setState({
+            _activeCardIndex: 0
+        })
+    }
+
+    _incrementIndex(){
+        var val = this.state._activeCardIndex;
+        this.setState({
+            _activeCardIndex: val+1
+        })
+    }
+
+    _decrementIndex(){
+        var val = this.state._activeCardIndex;
+        this.setState({
+            _activeCardIndex: val-1
+        })
+    }
+
+    _displayTempItems(){
+        this._resetIndex();
+        super._displayTempItems();
     }
 
 
@@ -450,11 +527,11 @@ class Section1 extends Section {
 
 
     onRightBtnClick(){
-
-        var currentindex = this._activeCardIndex;
-        if(currentindex + 1 < this.state.loadedItems.length) this._activeCardIndex++;
-        print("App.js 278: ", this._activeCardIndex);
-        if((this.state.loadedItems.length - this._activeCardIndex) < 4){
+        var items = this.state.displayTemp ? this.state.tempItems : this.state.loadedItems;
+        var currentindex = this.state._activeCardIndex;
+        if(currentindex + 1 < items.length) this._incrementIndex();
+        print("App.js 278: ", this.state._activeCardIndex);
+        if(!this.state.displayTemp && (items.length - this.state._activeCardIndex) < 4){
             print("278: loading more cards. ")
             this._loadItems()
         }
@@ -462,9 +539,9 @@ class Section1 extends Section {
 
     onLeftBtnClick(){
 
-        var currentindex = this._activeCardIndex;
-        if(currentindex > 0) this._activeCardIndex -= 1;
-        print(this._activeCardIndex)
+        var currentindex = this.state._activeCardIndex;
+        if(currentindex > 0) this._decrementIndex();
+        print(this.state._activeCardIndex)
     }
 
 
@@ -479,13 +556,13 @@ class Section1 extends Section {
             <div className={"row main_section1"}>
                 <SectionHead i={1} cb={this.onSearch.bind(this)} cbClear={this.onClear.bind(this)} title="All Clusters"></SectionHead>
                 <SectionBody>
-                    <ClusterWrapper leftBtnClick={this.onLeftBtnClick.bind(this)} rightBtnClick={this.onRightBtnClick.bind(this)}>
-                        {items.map((cardInfo, i) =>
+                    <ClusterWrapper scrollcb={_._handleScroll()} leftBtnClick={this.onLeftBtnClick.bind(this)} rightBtnClick={this.onRightBtnClick.bind(this)}>
+                        {items.map((cardInfo, index) =>
 
-                            <ClusterCard key={i}
+                            <ClusterCard key={index}
                                          title={cardInfo.title}
                                          feedbacks={cardInfo.feedbacks}
-                                         display={i < 1}
+                                         display={index === _.state._activeCardIndex}
                             >
                             </ClusterCard>
 
@@ -586,23 +663,6 @@ class Section2 extends Section {
             })
     }
 
-    handleScroll(){
-        //TODO TRIGGER A LOAD SENTENCE()
-        const _ = this;
-        function f(){
-            const classname = "."+this.classname;
-            const el = document.querySelector(classname);
-
-            if(el.scrollTop  + el.clientHeight >= 0.8 * el.scrollHeight){
-                print("App.js 447: bottom reached!", _._loadItems);
-                _._loadItems();
-            }
-
-        }
-
-        return f
-    }
-
     render(){
         const _ = this;
         var items = this.state.displayTemp ? this.state.tempItems : this.state.loadedItems;
@@ -610,7 +670,7 @@ class Section2 extends Section {
             <div className={"row main_section2"}>
                 <SectionHead i={2} cb={this.onSearch.bind(this)} cbClear={this.onClear.bind(this)} title="Unclustered Sentences"></SectionHead>
                 <SectionBody>
-                    <UnclusteredSentencesWrapper cb={(this.handleScroll)()} loadMore={()=>{_._loadItems(5,false)}}>
+                    <UnclusteredSentencesWrapper cb={(this._handleScroll)()} loadMore={()=>{_._loadItems(5,false)}}>
                         {items.map((sentence, index) =>
                             <UnclusteredSentence key={index} text={sentence.sentence_text}></UnclusteredSentence>
                         )}
