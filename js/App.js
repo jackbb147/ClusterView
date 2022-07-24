@@ -19,14 +19,34 @@ class SearchBar extends React.Component {
         super(props);
     }
 
+    /**
+     * after pressing search, the clear button appears.
+     * After clearing, the clear button disappears.
+     * @private
+     */
+    _onSearch(){
+        //TODO
+        var clearBtn = document.querySelector(".searchBar_clear")
+        if(clearBtn.classList.contains("no-display")){
+            clearBtn.classList.remove("no-display");
+        }
+        this.props.cb();
+    }
+
+    _onClear(){
+        //TODO
+        var clearBtn = document.querySelector(".searchBar_clear");
+        clearBtn.classList.add("no-display");
+        this.props.cbClear();
+    }
     render(){
         return (
             <div className={`${searchBarClassName} ${searchBarClassName}-${this.props.i}`}>
                 <div className={"searchBar_input"}>
                     <input type="text"/>
                 </div>
-                <div className={"searchBar_btn"} onClick={this.props.cb}>Search</div>
-                <div className={"searchBar_clear no-display"} onClick={this.props.cbClear}>Clear</div>
+                <div className={"searchBar_btn"} onClick={this._onSearch.bind(this)}>Search</div>
+                <div className={"searchBar_clear no-display"} onClick={this._onClear.bind(this)}>Clear</div>
             </div>
         )
     }
@@ -50,6 +70,7 @@ class Section extends React.Component {
         this._store = undefined;
         this._boxClassName = undefined;
         this._itemClassName = undefined;
+        this._title = undefined;
         this._endpoint = undefined; //e.g. "api/endpoint"
     }
 
@@ -133,8 +154,9 @@ class Section extends React.Component {
     /**
      * TODO event handler for undoing the result of onSearch()
      */
-    onExitSearch(){
-
+    onClear(){
+        print("145: onClear called");
+        //TODO
     }
 
     /**
@@ -151,10 +173,12 @@ class Section extends React.Component {
         })
     }
 
+
     /**
      * event handler for the search button.
      */
     onSearch(){
+
         // clear out the temp items array, before loading it.
         this.setState({
             tempItems: []
@@ -190,9 +214,8 @@ class Section extends React.Component {
 
                 })
         })
-
-
     }
+
 }
 
 // ----------- SECTION 1 ----------------
@@ -211,7 +234,7 @@ class SectionHead extends React.Component {
             <div className={"col-12 section_head"}>
                 <div className={"container_fluid"}>
                     <div>{this.props.title}</div>
-                    <SearchBar i={this.props.i} cb={this.props.cb}></SearchBar>
+                    <SearchBar i={this.props.i} cb={this.props.cb} cbClear={this.props.cbClear}></SearchBar>
                 </div>
             </div>
         )
@@ -452,7 +475,7 @@ class Section1 extends Section {
         var items = this.state.displayTemp ? this.state.tempItems : this.state.loadedItems;
         return (
             <div className={"row main_section1"}>
-                <SectionHead i={1} cb={this.onSearch.bind(this)} title="All Clusters"></SectionHead>
+                <SectionHead i={1} cb={this.onSearch.bind(this)} cbClear={this.onClear.bind(this)} title="All Clusters"></SectionHead>
                 <SectionBody>
                     <ClusterWrapper leftBtnClick={this.onLeftBtnClick.bind(this)} rightBtnClick={this.onRightBtnClick.bind(this)}>
                         {items.map((cardInfo, i) =>
