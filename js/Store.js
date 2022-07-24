@@ -18,8 +18,9 @@ class Store{
         return this.items.length;
     }
 
-    add(item){
-        (this.items).push(item);
+
+    add(...newItems){
+        (this.items).push(...newItems);
     }
 
     remove(identifier){
@@ -45,4 +46,57 @@ class Store{
         for(var i = 0; i < n && (i + skip) < this.count(); i++) ans.push(this.items.shift());
         return ans;
     }
+}
+
+/**
+ * just like store, but keeps track of an index property, and can LOAD from API.
+ */
+class SuperStore extends Store{
+    /**
+     *
+     * @param arr
+     * @param q query function
+     */
+    constructor(arr, q) {
+        super(arr);
+        this._q = q;
+        this._activeIndex = 0;
+        this._loadedItems = [];
+    }
+
+    incrementIndex(){
+        //TODO
+        var i = this._activeIndex;
+        if((i+1) < this.length()) this._activeIndex++;
+    }
+
+    decrementIndex(){
+        //TODO
+        var i = this._activeIndex;
+        if(i > 1) this._activeIndex--;
+    }
+
+    getActiveIndex(){
+        return this._activeIndex;
+    }
+
+    /**
+     * load one item .
+     */
+    loadItem(){
+
+    }
+
+    /**
+     * load a bunch of items.
+     */
+    loadItems(){
+
+    }
+
+    getLoadedItems(){
+        return this._loadedItems;
+    }
+
+
 }

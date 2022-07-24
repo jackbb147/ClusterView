@@ -73,7 +73,8 @@ class Section extends React.Component {
             tempItems: [], //temporary item storage (for search results, for example.)
             displayTemp: false // if true, display temporary items.
         }
-        this._store = undefined;
+        this._idStore = undefined;
+        this._loadedStore = undefined;
         this._boxClassName = undefined;
         this._itemClassName = undefined;
         this._title = undefined;
@@ -143,7 +144,7 @@ class Section extends React.Component {
     async _loadItems(n=5, recurse=false, from, to){
         const _ = this;
         if(_._gettingSome) return; // do not get some when we are still getting some.
-        if(from === undefined) from = this._store;
+        if(from === undefined) from = this._idStore;
 
         _._gettingSome = true;
         const bunch = from.getSome(n);
@@ -641,7 +642,7 @@ class Section1 extends Section {
         print("I(SECTION1) MOUNTED!");
         _._initiateStore()
             .then(store => {
-                _._store = store;
+                _._idStore = store;
                 _._loadItems(5)
             })
     }
@@ -942,7 +943,7 @@ class Section2 extends Section {
         print("I(SECTION2) MOUNTED!");
         _._initiateStore()
             .then(store => {
-                _._store = store;
+                _._idStore = store;
                 print("section 2: ", store.getAll());
                 _._loadItems(10, false);
 
@@ -979,6 +980,24 @@ class App extends React.Component {
     constructor(props) {
         super(props);
     }
+
+    /**
+     *
+     * Callback function passed down to cluster cards (section1)
+     * for the adding-sentence-to-cluster feature.
+     */
+    _handleClusterClick(clusterID){
+        print("989: handleClusterClick called: ", clusterID);
+    }
+
+    /**
+     * Callback function passed down to sentences (section2)
+     * for the adding-sentence-to-cluster feature.
+     */
+    _handleSentenceClick(sentenceID){
+        print("997: handleSentenceClick called: ", sentenceID)
+    }
+
 
     render() {
         return   (
