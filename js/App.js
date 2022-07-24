@@ -990,8 +990,10 @@ class App extends React.Component {
     }
 }
 
+const PRODUCTION = true;
 async function q(endpoint, params={}){
-    return fetch(`http://localhost:1700/api/${endpoint}`, params)
+    var link = PRODUCTION ? "https://clusterjack.herokuapp.com/api" : "http://localhost:1700/api";
+    return fetch(`${link}/${endpoint}`, params)
         .then(res => res.json())
         .then(val => {
             return val;
