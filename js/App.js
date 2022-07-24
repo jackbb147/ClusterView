@@ -323,8 +323,6 @@ class ClustersBox extends React.Component {
 class SetAcceptedStatusBtn extends React.Component{
     constructor(props) {
         super(props);
-        this.className = "ClusterCard_unaccept-btn";
-        this.text = "unaccept"
         if(!this.props.accepted) {
             this.className = "ClusterCard_accept-btn"
             this.text = "accept"
@@ -333,15 +331,18 @@ class SetAcceptedStatusBtn extends React.Component{
     }
 
     _handleClick(){
-
         print("you clicked me ")
         print("323: button clicked",this.props.accepted , this.props.id);
         this.props.cb(this.props.accepted, this.props.id, this.props.index)
     }
 
     render(){
+
+        var className = this.props.accepted ?
+            'ClusterCard_unaccept-btn' : "ClusterCard_accept-btn";
+        var text = this.props.accepted ? 'unaccept':'accept';
         return (
-            <div onClick={this._handleClick.bind(this)} className={this.className}>{this.text}</div>
+            <div onClick={this._handleClick.bind(this)} className={className}>{text}</div>
         )
     }
 }
@@ -411,7 +412,7 @@ class ClusterCard extends React.Component {
      */
     constructor(props) {
         super(props);
-        this.accepted = this.props.accepted;
+
         print("415: ClusterCard Constructor: accepted: ", this.props.accepted, "index: ", this.props.index)
     }
 
