@@ -308,6 +308,34 @@ class ClustersBox extends React.Component {
     }
 }
 
+
+
+
+class SetAcceptedStatusBtn extends React.Component{
+    constructor(props) {
+        super(props);
+        this.className = "ClusterCard_unaccept-btn";
+        this.text = "unaccept"
+        if(!this.props.accepted) {
+            this.className = "ClusterCard_accept-btn"
+            this.text = "accept"
+        }
+
+    }
+
+    _handleClick(){
+        //this.props.cb()
+        print("323: button clicked");
+    }
+
+    render(){
+        return (
+            <div onClick={this._handleClick} className={this.className}>{this.text}</div>
+        )
+    }
+}
+
+
 class ClusterCardHead extends React.Component {
     constructor(props) {
         super(props);
@@ -317,7 +345,8 @@ class ClusterCardHead extends React.Component {
         return (
             <div className={"row ClusterCard_head"}>
                 <div className={"col ClusterCard_title"}>{this.props.title}</div>
-                <div className={"ClusterCard_close"}>X</div>
+                {/*<div className={"ClusterCard_close"}>X</div>*/}
+                <SetAcceptedStatusBtn accepted={this.props.accepted}></SetAcceptedStatusBtn>
             </div>
         )
     }
@@ -370,13 +399,14 @@ class ClusterCard extends React.Component {
 
 
 
+
     render() {
         let display = this.props.display ? "" : "no-display-until-lg"
         let accepted = this.props.accepted;
         return (
             <div className={`ClusterCard ${display} ${accepted ? acceptedClassName : unacceptedClassName}`}>
                 <div className={"container_fluid"}>
-                    <ClusterCardHead title={this.props.title}></ClusterCardHead>
+                    <ClusterCardHead cb={this.props.headCB} accepted={this.props.accepted} title={this.props.title}></ClusterCardHead>
                     <ClusterCardBody feedbacks={this.props.feedbacks}></ClusterCardBody>
                 </div>
             </div>
@@ -552,6 +582,23 @@ class Section1 extends Section {
         print(this.state._activeCardIndex)
     }
 
+    /**
+     * the call back function for accept/unaccept btn.
+     * sends an API
+     * @return function
+     */
+    _setAcceptedStatus(){
+        //TODO
+
+        const _ = this;
+        const q = _.props.q;
+
+        function f(accepted, id){
+            print("app.js 597, ", accepted, id);
+        }
+
+        return f;
+    }
 
     /**
      * //TODO refactor this into Section Class. Same with Section2
@@ -572,6 +619,7 @@ class Section1 extends Section {
                                          accepted={cardInfo.accepted}
                                          feedbacks={cardInfo.feedbacks}
                                          display={index === _.state._activeCardIndex}
+                                         headCB={this._setAcceptedStatus()} //the callback function for (un)acceptBtn
                             >
                             </ClusterCard>
 
