@@ -315,7 +315,7 @@ class ClustersBox extends React.Component {
         let children = this.props.children.filter(child => {
             return (filter.displayAll ||
                 (filter.displayAccepted && child.props.accepted) ||
-                (filter.displayAccepted && !child.props.accepted))
+                (!filter.displayAccepted && !child.props.accepted))
         });
         return (
             <div onScroll={_.props.scrollcb.bind(_)} className="col col-10 hideScrollBar clusters-box">
