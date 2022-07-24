@@ -51,7 +51,7 @@ class SearchBar extends React.Component {
                 <div className={"searchBar_input"}>
                     <input type="text"/>
                 </div>
-                <div className={"searchBar_btn"} onClick={this._onSearch.bind(this)}>Search</div>
+                <div className={"searchBar_btn btn"} onClick={this._onSearch.bind(this)}>Search</div>
                 <div className={"searchBar_clear no-display"} onClick={this._onClear.bind(this)}>Clear</div>
             </div>
         )
@@ -347,7 +347,7 @@ class SetAcceptedStatusBtn extends React.Component{
             'ClusterCard_unaccept-btn' : "ClusterCard_accept-btn";
         var text = this.props.accepted ? 'unaccept':'accept';
         return (
-            <div onClick={this._handleClick.bind(this)} className={className }>{text}</div>
+            <div onClick={this._handleClick.bind(this)} className={className + " btn" }>{text}</div>
         )
     }
 }
@@ -401,7 +401,7 @@ class ClusterCardFeedbackEntry extends React.Component {
         return (
             <div className={"row ClusterCard_feedback"}>
                 <div className={"feedback_entry"}>{text}</div>
-                <div onClick={this.onRemove.bind(this)} className={"feedback_remove"}>remove</div>
+                <div onClick={this.onRemove.bind(this)} className={"feedback_remove btn"}>remove</div>
             </div>
         )
     }
@@ -530,7 +530,7 @@ class LeftBtn extends React.Component {
 
     render() {
         return (
-            <div  className={"d-lg-none col col-1 leftBtn"}>
+            <div  className={"d-lg-none col col-1 leftBtn btn"}>
                 <div onClick={this.handleClick.bind(this)}>{"<"}</div>
             </div>
         )
@@ -556,7 +556,7 @@ class RightBtn extends React.Component {
 
     render() {
         return (
-            <div  className={"d-lg-none col col-1 rightBtn"}>
+            <div  className={"d-lg-none col col-1 rightBtn btn"}>
                 <div onClick={this.handleClick.bind(this)}> {">"}</div>
             </div>
         )

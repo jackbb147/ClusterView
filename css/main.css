@@ -164,6 +164,6 @@ body {
     width: 50%;
 }
 
-.filterBtn {
-
+.btn:hover {
+    cursor: pointer;
 }
