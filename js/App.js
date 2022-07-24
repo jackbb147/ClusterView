@@ -293,7 +293,7 @@ class SectionHead extends React.Component {
         return (
             <div className={"col-12 section_head"}>
                 <div className={"container_fluid"}>
-                    <div>{this.props.title}</div>
+                    <div onClick={this.props.filterCB}>{this.props.title}</div>
                     <SearchBar i={this.props.i} cb={this.props.cb} cbClear={this.props.cbClear}></SearchBar>
                 </div>
             </div>
@@ -305,13 +305,21 @@ class ClustersBox extends React.Component {
     constructor(props) {
         super(props);
         this.classname = clustersBoxClassName;
+
     }
+
 
     render(){
         const _ = this;
+        let filter = this.props.filter;
+        let children = this.props.children.filter(child => {
+            return (filter.displayAll ||
+                (filter.displayAccepted && child.props.accepted) ||
+                (filter.displayAccepted && !child.props.accepted))
+        });
         return (
             <div onScroll={_.props.scrollcb.bind(_)} className="col col-10 hideScrollBar clusters-box">
-                {this.props.children}
+                {children}
             </div>
         )
     }
@@ -393,9 +401,6 @@ class ClusterCardFeedbackEntry extends React.Component {
 
     render() {
         var text = this.props.text;
-        print("text: ", text);
-        // let textNid = this._processText(text);
-        // print("textNid: ", textNid);
         return (
             <div className={"row ClusterCard_feedback"}>
                 <div className={"feedback_entry"}>{text}</div>
@@ -467,13 +472,11 @@ class ClusterCard extends React.Component {
     constructor(props) {
         super(props);
 
-        print("415: ClusterCard Constructor: accepted: ", this.props.accepted, "index: ", this.props.index)
     }
 
 
     render() {
         let accepted = this.props.accepted;
-        print("421: Cluster Card Render is called!, am I accepted? ", accepted, this.props.title);
         let display = this.props.display ? "" : "no-display-until-lg"
 
         return (
@@ -503,7 +506,7 @@ class ClusterWrapper extends React.Component {
             <div  className={"container_fluid clustersWrapper"}>
                 <div className="row" >
                     <LeftBtn cb={this.props.leftBtnClick}></LeftBtn>
-                    <ClustersBox scrollcb={_.props.scrollcb}>{this.props.children}</ClustersBox>
+                    <ClustersBox filter={this.props.filter} filterCB={this.props.filterCB} scrollcb={_.props.scrollcb}>{this.props.children}</ClustersBox>
                     <RightBtn cb={this.props.rightBtnClick}></RightBtn>
                 </div>
             </div>
@@ -570,12 +573,33 @@ class Section1 extends Section {
      */
     constructor(props) {
         super(props);
+        // this.state.displayALl = true;
+        // this.state.displayAccepted = true;
         this.state._activeCardIndex = 0;
+        this.state.filter = 0;  // 0 for display all, 1 for accepted only, 2 for unaccepted only
 
         this._boxClassName = clustersBoxClassName;
         this._endpoint = clusterEndpoint;
         this._itemClassName = clusterClassName;
     }
+
+    /**
+     * toggles the filter between the three modes.
+     * @private
+     */
+    _filterDisplay(){
+        print("594: filter called");
+        let newFilter = this.state.filter + 1;
+
+        this.setState({
+            filter: newFilter > 2 ? 0 : newFilter
+        })
+
+
+
+        //TODO
+    }
+
 
 
     /**
@@ -735,7 +759,7 @@ class Section1 extends Section {
             print("729: remove feedback called with: ", clusterID, sentenceID, cardIndex);
             //send a remove query to the API
             var v = true;
-            if(clusterID != -666 && v){ 
+            if(clusterID != -666 && v){
                 q(`removesentence/${clusterID}/${sentenceID}`)
                     .then (val => {
                         _._buildItem(clusterID).then(cluster => {
@@ -777,30 +801,45 @@ class Section1 extends Section {
      * @return {JSX.Element}
      */
     render(){
-        print("668: render is called!");
+        print("804: new filter value: ", this.state.filter);
         const _ = this;
         var items = this.state.displayTemp ? this.state.tempItems : this.state.loadedItems;
-        print("672: items: ", items)
-        if(items[0])
-            print("673: items[0].accepted: ", items[0].accepted);
+        var filter = {
+            displayAll: _.state.filter === 0,
+            displayAccepted: !(_.state.filter === 2)
+        }
+        var title = filter.displayAll
+            ? "All Cluster"
+            : filter.displayAccepted
+                ? "Accepted Clusters"
+                : "Unaccepted Clusters";
         return (
+
             <div className={"row main_section1"}>
-                <SectionHead i={1} cb={this.onSearch.bind(this)} cbClear={this.onClear.bind(this)} title="All Clusters"></SectionHead>
+                <SectionHead
+                    filterCB={this._filterDisplay.bind(this)}
+                    i={1}
+                    cb={this.onSearch.bind(this)}
+                    cbClear={this.onClear.bind(this)}
+                    title={title}/>
                 <SectionBody>
-                    <ClusterWrapper scrollcb={_._handleScroll()} leftBtnClick={this.onLeftBtnClick.bind(this)} rightBtnClick={this.onRightBtnClick.bind(this)}>
+                    <ClusterWrapper
+                        scrollcb={_._handleScroll()}
+                        leftBtnClick={this.onLeftBtnClick.bind(this)}
+                        rightBtnClick={this.onRightBtnClick.bind(this)}
+                        filter={filter}>
                         {items.map((cardInfo, index) => {
                                 let accepted = cardInfo.accepted;
-                                print("680: cardInfo.accepted: ", accepted, "index: ", index)
                                 return <ClusterCard key={index}
-                                             title={cardInfo.title}
-                                             accepted={accepted}
-                                    // accepted={cardInfo.accepted}
-                                             feedbacks={cardInfo.feedbacks}
-                                             display={index === _.state._activeCardIndex}
-                                             headCB={this._toggleAcceptedStatus()} //the callback function for (un)acceptBtn
-                                             id={cardInfo.id}
-                                             index={index}
-                                             removeCB={this.onRemoveFeedback()} //remove a feedback entry
+                                                    title={cardInfo.title}
+                                                    accepted={accepted}
+
+                                                    feedbacks={cardInfo.feedbacks}
+                                                    display={index === _.state._activeCardIndex}
+                                                    headCB={this._toggleAcceptedStatus()} //the callback function for (un)acceptBtn
+                                                    id={cardInfo.id}
+                                                    index={index}
+                                                    removeCB={this.onRemoveFeedback()} //remove a feedback entry
                                 >
                                 </ClusterCard>
                             }
