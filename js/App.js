@@ -1,6 +1,7 @@
 'use strict';
 
 
+// ==================== CONSTANTS ====================
 const searchBarClassName = "searchBar"; //TODO: refactor this in section class itself
 // --------------------------------------
 const clustersBoxClassName = "clusters-box";    //TODO  refactoring
@@ -9,6 +10,11 @@ const clusterEndpoint = "clusters";
 const sentencesEndpoint = "unclusteredsentences";
 const clusterClassName = "ClusterCard";
 const sentenceClassName = "unclustered-sentence";
+const acceptedClassName = "accepted";
+const unacceptedClassName = "unaccepted";
+
+
+// ==================== COMPONENTS ====================
 class SearchBar extends React.Component {
     /**
      * this.props.cb: callback function for search btn
@@ -366,8 +372,9 @@ class ClusterCard extends React.Component {
 
     render() {
         let display = this.props.display ? "" : "no-display-until-lg"
+        let accepted = this.props.accepted;
         return (
-            <div className={`ClusterCard ${display}`}>
+            <div className={`ClusterCard ${display} ${accepted ? acceptedClassName : unacceptedClassName}`}>
                 <div className={"container_fluid"}>
                     <ClusterCardHead title={this.props.title}></ClusterCardHead>
                     <ClusterCardBody feedbacks={this.props.feedbacks}></ClusterCardBody>
@@ -502,7 +509,8 @@ class Section1 extends Section {
             const  cluster = values[0][0], feedbacks = values[1];
             return {
                 title: cluster.title,
-                feedbacks
+                feedbacks,
+                accepted: cluster.accepted
             }
         })
     }
@@ -561,6 +569,7 @@ class Section1 extends Section {
 
                             <ClusterCard key={index}
                                          title={cardInfo.title}
+                                         accepted={cardInfo.accepted}
                                          feedbacks={cardInfo.feedbacks}
                                          display={index === _.state._activeCardIndex}
                             >
