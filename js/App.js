@@ -290,10 +290,11 @@ class SectionHead extends React.Component {
     }
 
     render(){
+
         return (
             <div className={"col-12 section_head"}>
                 <div className={"container_fluid"}>
-                    <div onClick={this.props.filterCB}>{this.props.title}</div>
+                    <div className={this.props.filterCB?"filterBtn btn btn-primary":""} onClick={this.props.filterCB}>{this.props.title}</div>
                     <SearchBar i={this.props.i} cb={this.props.cb} cbClear={this.props.cbClear}></SearchBar>
                 </div>
             </div>
@@ -641,7 +642,7 @@ class Section1 extends Section {
         _._initiateStore()
             .then(store => {
                 _._store = store;
-                _._loadItems(3)
+                _._loadItems(5)
             })
     }
 
