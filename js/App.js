@@ -312,14 +312,10 @@ class ClustersBox extends React.Component {
     render(){
         const _ = this;
         let filter = this.props.filter;
-        let children = this.props.children.filter(child => {
-            return (filter.displayAll ||
-                (filter.displayAccepted && child.props.accepted) ||
-                (!filter.displayAccepted && !child.props.accepted))
-        });
+
         return (
             <div onScroll={_.props.scrollcb.bind(_)} className="col col-10 hideScrollBar clusters-box">
-                {children}
+                {this.props.children}
             </div>
         )
     }
@@ -523,6 +519,7 @@ class LeftBtn extends React.Component {
         print("clicked me ");
         this.props.cb();
         var current = document.querySelector(".ClusterCard:not(.no-display-until-lg)")
+        if(current === null) return;
         var prev = current.previousElementSibling;
         if(prev=== null) return;
         removeClass(prev, "no-display-until-lg");
@@ -548,6 +545,7 @@ class RightBtn extends React.Component {
         print("clicked me ");
         this.props.cb();
         var current = document.querySelector(".ClusterCard:not(.no-display-until-lg)")
+        if(current === null) return;
         var next = current.nextElementSibling;
         if(next === null) return;
         removeClass(next, "no-display-until-lg");
@@ -583,22 +581,6 @@ class Section1 extends Section {
         this._itemClassName = clusterClassName;
     }
 
-    /**
-     * toggles the filter between the three modes.
-     * @private
-     */
-    _filterDisplay(){
-        print("594: filter called");
-        let newFilter = this.state.filter + 1;
-
-        this.setState({
-            filter: newFilter > 2 ? 0 : newFilter
-        })
-
-
-
-        //TODO
-    }
 
 
 
@@ -609,13 +591,6 @@ class Section1 extends Section {
     _resetIndex(){
         this.setState({
             _activeCardIndex: 0
-        })
-    }
-
-    _incrementIndex(){
-        var val = this.state._activeCardIndex;
-        this.setState({
-            _activeCardIndex: val+1
         })
     }
 
@@ -670,7 +645,31 @@ class Section1 extends Section {
             })
     }
 
+    _incrementIndex(){
+        var val = this.state._activeCardIndex;
+        this.setState({
+            _activeCardIndex: val+1
+        })
+    }
 
+
+    /**
+     * toggles the filter between the three modes.
+     * @private
+     */
+    _filterDisplay(){
+        print("594: filter called");
+        let newFilter = this.state.filter + 1;
+
+        this.setState({
+            filter: newFilter > 2 ? 0 : newFilter,
+            _activeCardIndex: 0
+        })
+
+
+
+        //TODO
+    }
 
     onRightBtnClick(){
         var items = this.state.displayTemp ? this.state.tempItems : this.state.loadedItems;
@@ -813,6 +812,14 @@ class Section1 extends Section {
             : filter.displayAccepted
                 ? "Accepted Clusters"
                 : "Unaccepted Clusters";
+        items =  items.filter(child => {
+            return (filter.displayAll ||
+                (filter.displayAccepted && child.accepted) ||
+                (!filter.displayAccepted && !child.accepted))
+        });
+        //load more, if items is 0
+        print("818: items: ", items);
+
         return (
 
             <div className={"row main_section1"}>
