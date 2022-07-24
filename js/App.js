@@ -26,7 +26,7 @@ class SearchBar extends React.Component {
      */
     _onSearch(){
         //TODO
-        var clearBtn = document.querySelector(".searchBar_clear")
+        var clearBtn = document.querySelector(`.searchBar-${this.props.i} >.searchBar_clear`)
         if(clearBtn.classList.contains("no-display")){
             clearBtn.classList.remove("no-display");
         }
@@ -35,7 +35,7 @@ class SearchBar extends React.Component {
 
     _onClear(){
         //TODO
-        var clearBtn = document.querySelector(".searchBar_clear");
+        var clearBtn = document.querySelector(`.searchBar-${this.props.i} >.searchBar_clear`);
         clearBtn.classList.add("no-display");
         this.props.cbClear();
     }
@@ -156,7 +156,9 @@ class Section extends React.Component {
      */
     onClear(){
         print("145: onClear called");
-        //TODO
+        //TODO (may actually not be necessary to clear the temp items at this point.)
+        this._toggleDisplayedItems();
+
     }
 
     /**
@@ -555,6 +557,7 @@ class Section2 extends Section {
         this._boxClassName = sentencesBoxClassName;
         this._endpoint = sentencesEndpoint;
         this._itemClassName = sentenceClassName;
+
     }
 
     /**
@@ -605,7 +608,7 @@ class Section2 extends Section {
         var items = this.state.displayTemp ? this.state.tempItems : this.state.loadedItems;
         return (
             <div className={"row main_section2"}>
-                <SectionHead i={2} cb={this.onSearch.bind(this)} title="Unclustered Sentences"></SectionHead>
+                <SectionHead i={2} cb={this.onSearch.bind(this)} cbClear={this.onClear.bind(this)} title="Unclustered Sentences"></SectionHead>
                 <SectionBody>
                     <UnclusteredSentencesWrapper cb={(this.handleScroll)()} loadMore={()=>{_._loadItems(5,false)}}>
                         {items.map((sentence, index) =>
