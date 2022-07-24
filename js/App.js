@@ -124,6 +124,15 @@ class Section extends React.Component {
 
 
     /**
+     * TODO refactor so that accepting/unaccepting a cluster
+     * triggers this function instead of hardcoding the loading  process again.
+     * @return {Promise<void>}
+     * @private
+     */
+    async _loadItem(){
+
+    }
+    /**
      * loads n items
      * @param n
      * @param recurse if true, call itself to get more cards
@@ -402,14 +411,15 @@ class ClusterCard extends React.Component {
      */
     constructor(props) {
         super(props);
+        this.state= {
+            accepted: this.props.accepted
+        }
     }
-
-
 
 
     render() {
         let display = this.props.display ? "" : "no-display-until-lg"
-        let accepted = this.props.accepted;
+        let accepted = this.state.accepted
         return (
             <div className={`ClusterCard ${display} ${accepted ? acceptedClassName : unacceptedClassName}`}>
                 <div className={"container_fluid"}>
@@ -606,15 +616,41 @@ class Section1 extends Section {
         const _ = this;
         const q = _.props.q;
 
+        /**
+         *
+         * @param accepted
+         * @param id cluster id.
+         * @param index the index of this cluster, in the currently displayed items array.
+         */
         function toggler(accepted, id, index=undefined){
             print("app.js 597, ", accepted, id, index);
 
             //TODO send request to API
+            let queryString = accepted ? "unacceptcluster/" : "acceptcluster/";
+            queryString += id;
+            var changeStatusPromise = q(queryString);
+            changeStatusPromise.then(val => {
+                //TODO  trigger a reload
+                //  TODO 1. fetching  this cluster again
+                var clusterPromise = _._buildItem(id);
+                clusterPromise.then(cluster => {
+                    //TODO 2. swap this with the old one in the current items array.
+                    let items = _.state.displayTemp ? _.state.tempItems : _.state.loadedItems;
+                    items[index] = cluster;
+                    //TODO 2 then setstate to trigger a rerendering.
+                    if(_.state.displayTemp) {
+                        _.setState({
+                            tempItems: items
+                        })
+                    }else{
+                        _.setState({
+                            loadedItems: items
+                        })
+                    }
+                })
 
-            //TODO  trigger a reload
 
-                //TODO 1. get the index of this cluster in items(could be loadeditems or temp)
-                ///TODO 2. get state from api, then setstate to trigger a rerendering.
+            })
 
 
 
