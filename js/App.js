@@ -374,11 +374,27 @@ class ClusterCardFeedbackEntry extends React.Component {
         super(props);
     }
 
-    render( ) {
+    /**
+     * callback for remove feedback
+     */
+    onRemove(){
+        print("381: onRemove called, feedback id: ", this.props.id);
+
+        //TODO
+    }
+
+
+
+
+    render() {
+        var text = this.props.text;
+        print("text: ", text);
+        // let textNid = this._processText(text);
+        // print("textNid: ", textNid);
         return (
             <div className={"row ClusterCard_feedback"}>
-                <div className={"feedback_entry"}>{this.props.text}</div>
-                <div className={"feedback_remove"}>X</div>
+                <div className={"feedback_entry"}>{text}</div>
+                <div onClick={this.onRemove.bind(this)} className={"feedback_remove"}>X</div>
             </div>
         )
     }
@@ -389,14 +405,43 @@ class ClusterCardBody extends React.Component {
         super(props);
     }
 
+    /**
+     * TODO: a little ugly
+     * (the text format is "text$fbid") seperate
+     * the text and feedbackid. return an array
+     * @return Array [text, ID]
+     */
+    _processText(rawText) {
+        //TODO
+        if(!rawText) return [undefined, undefined];
+        var rawArr = rawText.split('');
+        var index = rawArr.lastIndexOf('$');
+
+        let text = rawArr.splice(0, index);
+        rawArr.shift();
+        let fbID = Number(rawArr.join(''));
+        // print("fbID: ", fbID);
+        return [text.join(''), fbID];
+    }
+
+
     render( ) {
+        const _ = this;
         var i = 0;
         return (
             <div className={"row ClusterCard_body hideScrollBar"}>
                 <div className={"container_fluid ClusterCard_body_container hideScrollBar"}>
                     {
-                        this.props.feedbacks.map(fb =>
-                            <ClusterCardFeedbackEntry key={i++} text={fb}></ClusterCardFeedbackEntry>
+                        this.props.feedbacks.map(fb =>{
+                            let textNid = _._processText(fb);
+                            return <ClusterCardFeedbackEntry
+                                key={i++}
+                                text={textNid[0]}
+                                id={textNid[1]}
+                                cb={this.props.removeCB}
+                                index={i}
+                            />
+                        }
                         )
                     }
                 </div>
@@ -426,7 +471,10 @@ class ClusterCard extends React.Component {
             <div className={`ClusterCard ${display} ${accepted ? acceptedClassName : unacceptedClassName}`}>
                 <div className={"container_fluid"}>
                     <ClusterCardHead index={this.props.index} cb={this.props.headCB} id={this.props.id} accepted={this.props.accepted} title={this.props.title}></ClusterCardHead>
-                    <ClusterCardBody feedbacks={this.props.feedbacks}></ClusterCardBody>
+                    <ClusterCardBody
+                        feedbacks={this.props.feedbacks}
+                        removeCB={this.props.removeCB}
+                    />
                 </div>
             </div>
         );
@@ -663,6 +711,19 @@ class Section1 extends Section {
     }
 
     /**
+     * for removing a feedback entry from a cluster card.
+     */
+    onRemoveFeedback(){
+
+        print("683: remove feedback called");
+
+        function f(){
+
+        }
+
+        return f;
+    }
+    /**
      * //TODO refactor this into Section Class. Same with Section2
      * @return {JSX.Element}
      */
@@ -690,6 +751,7 @@ class Section1 extends Section {
                                              headCB={this._toggleAcceptedStatus()} //the callback function for (un)acceptBtn
                                              id={cardInfo.id}
                                              index={index}
+                                             removeCB={this.onRemoveFeedback()} //remove a feedback entry
                                 >
                                 </ClusterCard>
                             }
