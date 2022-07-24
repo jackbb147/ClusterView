@@ -411,15 +411,16 @@ class ClusterCard extends React.Component {
      */
     constructor(props) {
         super(props);
-        this.state= {
-            accepted: this.props.accepted
-        }
+        this.accepted = this.props.accepted;
+        print("415: ClusterCard Constructor: accepted: ", this.props.accepted, "index: ", this.props.index)
     }
 
 
     render() {
+        let accepted = this.props.accepted;
+        print("421: Cluster Card Render is called!, am I accepted? ", accepted, this.props.title);
         let display = this.props.display ? "" : "no-display-until-lg"
-        let accepted = this.state.accepted
+
         return (
             <div className={`ClusterCard ${display} ${accepted ? acceptedClassName : unacceptedClassName}`}>
                 <div className={"container_fluid"}>
@@ -668,23 +669,29 @@ class Section1 extends Section {
         print("668: render is called!");
         const _ = this;
         var items = this.state.displayTemp ? this.state.tempItems : this.state.loadedItems;
+        print("672: items: ", items)
+        if(items[0])
+            print("673: items[0].accepted: ", items[0].accepted);
         return (
             <div className={"row main_section1"}>
                 <SectionHead i={1} cb={this.onSearch.bind(this)} cbClear={this.onClear.bind(this)} title="All Clusters"></SectionHead>
                 <SectionBody>
                     <ClusterWrapper scrollcb={_._handleScroll()} leftBtnClick={this.onLeftBtnClick.bind(this)} rightBtnClick={this.onRightBtnClick.bind(this)}>
-                        {items.map((cardInfo, index) =>
-
-                            <ClusterCard key={index}
-                                         title={cardInfo.title}
-                                         accepted={cardInfo.accepted}
-                                         feedbacks={cardInfo.feedbacks}
-                                         display={index === _.state._activeCardIndex}
-                                         headCB={this._toggleAcceptedStatus()} //the callback function for (un)acceptBtn
-                                         id={cardInfo.id}
-                                         index={index}
-                            >
-                            </ClusterCard>
+                        {items.map((cardInfo, index) => {
+                                let accepted = cardInfo.accepted;
+                                print("680: cardInfo.accepted: ", accepted, "index: ", index)
+                                return <ClusterCard key={index}
+                                             title={cardInfo.title}
+                                             accepted={accepted}
+                                    // accepted={cardInfo.accepted}
+                                             feedbacks={cardInfo.feedbacks}
+                                             display={index === _.state._activeCardIndex}
+                                             headCB={this._toggleAcceptedStatus()} //the callback function for (un)acceptBtn
+                                             id={cardInfo.id}
+                                             index={index}
+                                >
+                                </ClusterCard>
+                            }
 
                         )}
                     </ClusterWrapper>
