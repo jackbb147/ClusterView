@@ -434,13 +434,14 @@ class ClusterCardBody extends React.Component {
                     {
                         this.props.feedbacks.map(fb =>{
                             let textNid = _._processText(fb);
-                            return <ClusterCardFeedbackEntry
-                                key={i++}
-                                text={textNid[0]}
-                                id={textNid[1]}
-                                cb={this.props.removeCB}
-                                index={i}
-                            />
+                            if(!(textNid[1] === undefined))
+                                return <ClusterCardFeedbackEntry
+                                    key={i++}
+                                    text={textNid[0]}
+                                    id={textNid[1]}
+                                    cb={this.props.removeCB}
+                                    index={i}
+                                />
                         }
                         )
                     }
