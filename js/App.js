@@ -324,13 +324,15 @@ class SetAcceptedStatusBtn extends React.Component{
     }
 
     _handleClick(){
-        //this.props.cb()
-        print("323: button clicked");
+
+        print("you clicked me ")
+        print("323: button clicked",this.props.accepted , this.props.id);
+        this.props.cb(this.props.accepted, this.props.id, this.props.index)
     }
 
     render(){
         return (
-            <div onClick={this._handleClick} className={this.className}>{this.text}</div>
+            <div onClick={this._handleClick.bind(this)} className={this.className}>{this.text}</div>
         )
     }
 }
@@ -346,7 +348,12 @@ class ClusterCardHead extends React.Component {
             <div className={"row ClusterCard_head"}>
                 <div className={"col ClusterCard_title"}>{this.props.title}</div>
                 {/*<div className={"ClusterCard_close"}>X</div>*/}
-                <SetAcceptedStatusBtn accepted={this.props.accepted}></SetAcceptedStatusBtn>
+                <SetAcceptedStatusBtn
+                    accepted={this.props.accepted}
+                    id={this.props.id}
+                    cb={this.props.cb}
+                    index={this.props.index}
+                />
             </div>
         )
     }
@@ -406,7 +413,7 @@ class ClusterCard extends React.Component {
         return (
             <div className={`ClusterCard ${display} ${accepted ? acceptedClassName : unacceptedClassName}`}>
                 <div className={"container_fluid"}>
-                    <ClusterCardHead cb={this.props.headCB} accepted={this.props.accepted} title={this.props.title}></ClusterCardHead>
+                    <ClusterCardHead index={this.props.index} cb={this.props.headCB} id={this.props.id} accepted={this.props.accepted} title={this.props.title}></ClusterCardHead>
                     <ClusterCardBody feedbacks={this.props.feedbacks}></ClusterCardBody>
                 </div>
             </div>
@@ -485,6 +492,11 @@ class RightBtn extends React.Component {
 
 
 class Section1 extends Section {
+    /**
+     * cards are built from this.state.loadedItems,
+     * where each item is an object associated with a cluster.
+     * @param props
+     */
     constructor(props) {
         super(props);
         this.state._activeCardIndex = 0;
@@ -540,7 +552,8 @@ class Section1 extends Section {
             return {
                 title: cluster.title,
                 feedbacks,
-                accepted: cluster.accepted
+                accepted: cluster.accepted,
+                id: clusterID
             }
         })
     }
@@ -587,17 +600,27 @@ class Section1 extends Section {
      * sends an API
      * @return function
      */
-    _setAcceptedStatus(){
+    _toggleAcceptedStatus(){
         //TODO
 
         const _ = this;
         const q = _.props.q;
 
-        function f(accepted, id){
-            print("app.js 597, ", accepted, id);
+        function toggler(accepted, id, index=undefined){
+            print("app.js 597, ", accepted, id, index);
+
+            //TODO send request to API
+
+            //TODO  trigger a reload
+
+                //TODO 1. get the index of this cluster in items(could be loadeditems or temp)
+                ///TODO 2. get state from api, then setstate to trigger a rerendering.
+
+
+
         }
 
-        return f;
+        return toggler;
     }
 
     /**
@@ -619,7 +642,9 @@ class Section1 extends Section {
                                          accepted={cardInfo.accepted}
                                          feedbacks={cardInfo.feedbacks}
                                          display={index === _.state._activeCardIndex}
-                                         headCB={this._setAcceptedStatus()} //the callback function for (un)acceptBtn
+                                         headCB={this._toggleAcceptedStatus()} //the callback function for (un)acceptBtn
+                                         id={cardInfo.id}
+                                         index={index}
                             >
                             </ClusterCard>
 
