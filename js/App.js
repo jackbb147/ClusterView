@@ -634,6 +634,7 @@ class Section1 extends Section {
                 //  TODO 1. fetching  this cluster again
                 var clusterPromise = _._buildItem(id);
                 clusterPromise.then(cluster => {
+                    print("637: updated cluster: ", cluster)
                     //TODO 2. swap this with the old one in the current items array.
                     let items = _.state.displayTemp ? _.state.tempItems : _.state.loadedItems;
                     items[index] = cluster;
@@ -664,6 +665,7 @@ class Section1 extends Section {
      * @return {JSX.Element}
      */
     render(){
+        print("668: render is called!");
         const _ = this;
         var items = this.state.displayTemp ? this.state.tempItems : this.state.loadedItems;
         return (
