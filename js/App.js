@@ -329,7 +329,7 @@ class SetAcceptedStatusBtn extends React.Component{
     constructor(props) {
         super(props);
         if(!this.props.accepted) {
-            this.className = "ClusterCard_accept-btn"
+            this.className = "ClusterCard_accept-btn "
             this.text = "accept"
         }
 
@@ -347,7 +347,7 @@ class SetAcceptedStatusBtn extends React.Component{
             'ClusterCard_unaccept-btn' : "ClusterCard_accept-btn";
         var text = this.props.accepted ? 'unaccept':'accept';
         return (
-            <div onClick={this._handleClick.bind(this)} className={className}>{text}</div>
+            <div onClick={this._handleClick.bind(this)} className={className }>{text}</div>
         )
     }
 }
@@ -401,7 +401,7 @@ class ClusterCardFeedbackEntry extends React.Component {
         return (
             <div className={"row ClusterCard_feedback"}>
                 <div className={"feedback_entry"}>{text}</div>
-                <div onClick={this.onRemove.bind(this)} className={"feedback_remove"}>X</div>
+                <div onClick={this.onRemove.bind(this)} className={"feedback_remove"}>remove</div>
             </div>
         )
     }

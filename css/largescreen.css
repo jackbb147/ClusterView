@@ -32,6 +32,8 @@
 
     .ClusterCard {
         margin-bottom: 5rem;
+        max-width: 80%;
+        max-height: 70%;
     }
 
 
