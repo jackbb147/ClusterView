@@ -44,37 +44,7 @@ class SectionItemManager {
         return this._filter;
     }
 
-
-
-    /**
-     * NOTE: AUTOMATICALLY FETCH MORE FROM API, IF NEW INDEX IS OUT OF BOUNDS.
-     * @param n
-     */
-    incrementIndex(n=1){
-        // const _ = this;
-        // let count = this._itemstore.count();
-        // if(this._activeindex + n < count) this._activeindex+=n;
-        // else {
-        //     print("Store.js 140: incrementIndex called. Out of bounds. ")
-        //     if(_.count() < _._itemIDstore.count()){
-        //         let newItemPromises = _._prepItems(5, _.count());
-        //         newItemPromises.then(items => {
-        //             print("103: ", items);
-        //             _.stockUp(items);
-        //             print("finished stocking up: ", _.getAllItems());
-        //         })
-        //     }
-        // }
-    }
-
-
-    decrementIndex(n=1){
-        // let count = this._itemstore.count();
-        // if(this._activeindex - n >= 0) this._activeindex-=n;
-    }
-
     get activeIndex(){
-
         return this._activeindex;
     }
 
@@ -89,6 +59,9 @@ class SectionItemManager {
             print("successfully set active index to be: ", this.activeIndex);
         }
         else {
+            /**
+             * NOTE: AUTOMATICALLY FETCH MORE FROM API, IF NEW INDEX IS OUT OF BOUNDS.
+             */
             print("Store.js 140: incrementIndex called. Out of bounds. ")
             if(_.count() < _._itemIDstore.count()){
                 let newItemPromises = _._prepItems(5, _.count());

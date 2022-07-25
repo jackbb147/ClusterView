@@ -112,7 +112,7 @@ class Section extends React.Component {
 
             if(el.scrollTop  + el.clientHeight >= 0.8 * el.scrollHeight){
                 print("App.js 123: bottom reached!");
-                _.manager.incrementIndex();
+                _.manager.activeIndex+=1;
                 _.manager = _.manager; //THIS SETTER WILL TRIGGER A RERENDER.
             }
 
@@ -248,7 +248,6 @@ class Section1 extends Section {
             print("f called ");
             let manager = _.manager;
             manager.activeIndex += 1;
-            // manager.incrementIndex();
             _.manager = manager;    //set state, to trigger re-render
         }
 
