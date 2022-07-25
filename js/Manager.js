@@ -36,12 +36,75 @@ class SectionItemManager {
 
     set filter(newFilter){
         //TODO
+        //TODO there's supposed to be some major logic here
         this._filter = newFilter;
     }
 
     get filter(){
         return this._filter;
     }
+
+
+
+    /**
+     * NOTE: AUTOMATICALLY FETCH MORE FROM API, IF NEW INDEX IS OUT OF BOUNDS.
+     * @param n
+     */
+    incrementIndex(n=1){
+        // const _ = this;
+        // let count = this._itemstore.count();
+        // if(this._activeindex + n < count) this._activeindex+=n;
+        // else {
+        //     print("Store.js 140: incrementIndex called. Out of bounds. ")
+        //     if(_.count() < _._itemIDstore.count()){
+        //         let newItemPromises = _._prepItems(5, _.count());
+        //         newItemPromises.then(items => {
+        //             print("103: ", items);
+        //             _.stockUp(items);
+        //             print("finished stocking up: ", _.getAllItems());
+        //         })
+        //     }
+        // }
+    }
+
+
+    decrementIndex(n=1){
+        // let count = this._itemstore.count();
+        // if(this._activeindex - n >= 0) this._activeindex-=n;
+    }
+
+    get activeIndex(){
+
+        return this._activeindex;
+    }
+
+    set activeIndex(newIndex){
+        const _ = this;
+        print( "setter called from:  active index: ", _._activeindex, "newIndex: ", newIndex);
+        if(newIndex < 0) return;
+
+
+        if(newIndex < _.count()) {
+            this._activeindex = newIndex;
+            print("successfully set active index to be: ", this.activeIndex);
+        }
+        else {
+            print("Store.js 140: incrementIndex called. Out of bounds. ")
+            if(_.count() < _._itemIDstore.count()){
+                let newItemPromises = _._prepItems(5, _.count());
+                newItemPromises.then(items => {
+                    print("103: ", items);
+                    _.stockUp(items);
+                    print("finished stocking up: ", _.getAllItems());
+                    _._activeindex = newIndex;
+                    print("successfully set active index to be: ", this.activeIndex);
+                })
+            }
+        }
+    }
+
+
+
 
 
 
@@ -88,42 +151,6 @@ class SectionItemManager {
         return items;
     }
 
-    getActiveIndex(){
-        return this._activeindex;
-    }
-
-    get activeIndex(){
-        return this._activeindex;
-    }
-
-    set activeIndex(i){
-        if(!this._itemstore.isValidIndex(i)){
-            print(i+" is not a valid index. ");
-            return;
-        }
-        this._activeindex = i;
-    }
-
-    /**
-     * NOTE: AUTOMATICALLY FETCH MORE FROM API, IF NEW INDEX IS OUT OF BOUNDS.
-     * @param n
-     */
-    incrementIndex(n=1){
-        const _ = this;
-        let count = this._itemstore.count();
-        if(this._activeindex + n < count) this._activeindex+=n;
-        else {
-            print("Store.js 140: incrementIndex called. Out of bounds. ")
-            if(_.count() < _._itemIDstore.count()){
-                let newItemPromises = _._prepItems(5, _.count());
-                newItemPromises.then(items => {
-                    print("103: ", items);
-                    _.stockUp(items);
-                    print("finished stocking up: ", _.getAllItems());
-                })
-            }
-        }
-    }
 
     /**
      * fetch from API, then prep the fetched information into "items".
@@ -141,11 +168,6 @@ class SectionItemManager {
     stockUp(newItems){
         const _ = this;
         _._itemstore.append(newItems);
-    }
-
-    decrementIndex(n=1){
-        let count = this._itemstore.count();
-        if(this._activeindex - n >= 0) this._activeindex-=n;
     }
 
     /**
@@ -217,7 +239,7 @@ class SectionItemManager {
 
     /**
      * stock up the item store by fetching all items.
-     * @param n fetch how many? default to 10.
+     * @param n fetch how many? default to 13.
      * @return {Promise<void>}
      * @private
      */

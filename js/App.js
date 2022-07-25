@@ -18,6 +18,8 @@ const sectionEndpoints = [
     [clusterEndpoint, clusterFeedbacksEndpoint],
     [unclusteredSentencesEndpoint, sentenceEndpoint]
 ];
+const INITIALLOADCOUNT_SENTENCE = 20;
+const INITIALLOADCOUNT_CLUSTER = 3;
 
 // ----------- SECTION LOGIC ------------------------
 
@@ -204,7 +206,7 @@ class Section1 extends Section {
             sectionEndpoints[_.props.i - 1],
         );
         _.managers = [manager];
-        return manager.initiate()
+        return manager.initiate(INITIALLOADCOUNT_CLUSTER)
             .then( () => {
                 //after initiating, call setState to trigger a re-render.
                 _.managers = [manager];
@@ -243,8 +245,10 @@ class Section1 extends Section {
         const _ = this;
 
         function f(){
+            print("f called ");
             let manager = _.manager;
-            manager.incrementIndex();
+            manager.activeIndex += 1;
+            // manager.incrementIndex();
             _.manager = manager;    //set state, to trigger re-render
         }
 
@@ -256,7 +260,8 @@ class Section1 extends Section {
 
         function f(){
             let manager = _.manager;
-            manager.decrementIndex();
+            manager.activeIndex -= 1;
+            // manager.decrementIndex();
             _.manager = manager;
         }
 
@@ -485,7 +490,7 @@ class Section2 extends Section {
             _.props.q,
             sectionEndpoints[_.props.i - 1],
         );
-        return manager.initiate(20)
+        return manager.initiate(INITIALLOADCOUNT_SENTENCE)
             .then( () => {
                 manager.activeIndex = manager.count()-1;
                 //after initiating, call setState to trigger a re-render.
@@ -854,12 +859,12 @@ class LeftBtn extends React.Component {
     handleClick(){
         print("clicked me ");
         this.props.cb();
-        var current = document.querySelector(".ClusterCard:not(.no-display-until-lg)")
-        if(current === null) return;
-        var prev = current.previousElementSibling;
-        if(prev=== null) return;
-        removeClass(prev, "no-display-until-lg");
-        addClass(current, "no-display-until-lg");
+        // var current = document.querySelector(".ClusterCard:not(.no-display-until-lg)")
+        // if(current === null) return;
+        // var prev = current.previousElementSibling;
+        // if(prev=== null) return;
+        // removeClass(prev, "no-display-until-lg");
+        // addClass(current, "no-display-until-lg");
 
     }
 
@@ -880,12 +885,12 @@ class RightBtn extends React.Component {
     handleClick(){
         print("clicked me ");
         this.props.cb();
-        var current = document.querySelector(".ClusterCard:not(.no-display-until-lg)")
-        if(current === null) return;
-        var next = current.nextElementSibling;
-        if(next === null) return;
-        removeClass(next, "no-display-until-lg");
-        addClass(current, "no-display-until-lg");
+        // var current = document.querySelector(".ClusterCard:not(.no-display-until-lg)")
+        // if(current === null) return;
+        // var next = current.nextElementSibling;
+        // if(next === null) return;
+        // removeClass(next, "no-display-until-lg");
+        // addClass(current, "no-display-until-lg");
 
     }
 
