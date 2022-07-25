@@ -83,8 +83,9 @@ class SectionItemManager {
      */
     async initiate(){
         const _ = this;
+        print("SectionItemManager: 86: ", _);
         let queryString = `${_._endpoints[0]}` //TODO
-        print("84: queryString: ", queryString);
+
         if(this._filter) queryString += `/${this._filter};`
         return _._initiateIDStore(queryString)
             .then(() => _._initiateItemStore());
@@ -304,20 +305,17 @@ class ClustersManager extends SectionItemManager {
                     feedbacks = this._processFB(values[1][i].filter(fb => fb)); //because some feedbacks are null.
 
                 if(!cluster ) continue;
-                print("305: cluster: ", cluster, "feedbacks: ", feedbacks)
                 let item = {
                     title: cluster.title,
                     feedbacks: feedbacks,
                     accepted: cluster.accepted,
                     id: cluster.id
                 }
-                print("311: item: ", item);
+
                 items.push(item);
             }
 
             _._itemstore.setItems(items);
-            print("317: items: ", items);
-            print("318: my item store: ", _._itemstore.getItems());
 
         })
 
@@ -332,7 +330,7 @@ class ClustersManager extends SectionItemManager {
      */
     _processFB(rawFB) {
         //TODO
-        print("334 rawtext: ", rawFB)
+
         return rawFB.map(rawText => {
             if(!rawText) return [undefined, undefined];
             var rawArr = rawText.split('');
@@ -360,5 +358,21 @@ class SentencesManager extends SectionItemManager {
     constructor(...args) {
         super(...args);
     }
+
+    /**
+     * stock up the item store by fetching all items.
+     * @return {Promise<Awaited<*>[]>}
+     */
+    async _initiateItemStore(n= 10){
+        print("Sentence Manager initiate item store called");
+        const _ = this;
+        return super._initiateItemStore(n)
+            .then( () => {
+                _._itemstore.setItems(
+                    _._itemstore.getItems().map(item => item[0])//see API doc for format.
+                )
+            })
+    }
+
 }
 

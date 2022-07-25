@@ -56,7 +56,7 @@ class Section extends React.Component {
         })
         return manager.initiate()
             .then( () => {
-                print("manager initiated!");
+
 
 
                 //after initiating, call setState to trigger a re-render.
@@ -66,6 +66,34 @@ class Section extends React.Component {
             })
 
     }
+
+
+
+
+    get filter(){
+        return this.state.filter;
+    }
+
+    get manager(){
+        return this.state.itemManagers[this.filter?this.filter:0];
+    }
+
+    get managers(){
+        return this.state.itemManagers;
+    }
+
+    set manager(newManager){
+        print("App.js 248: setter called: ", newManager);
+        let managers = this.managers;
+        managers[this.filter?this.filter:0] = newManager;
+        this.setState({
+            managers: managers
+        })
+    }
+
+
+
+
 
     /**
      * get the items array from manager.
@@ -177,11 +205,13 @@ class Section1 extends Section {
         this._boxClassName = clustersBoxClassName;
         this._endpoint = clusterEndpoint;
     }
+
     /**
      *
      * @return {Promise<Awaited<*>[]>}
      */
     async componentDidMount(){
+
         const _ = this;
         let manager = new ClustersManager(
             _.props.q,
@@ -192,9 +222,9 @@ class Section1 extends Section {
         })
         return manager.initiate()
             .then( () => {
-                print("manager initiated!");
 
-                print("99: ", _.state.itemManagers);
+
+
                 //after initiating, call setState to trigger a re-render.
                 _.setState({
                     itemManagers: [manager]
@@ -231,28 +261,6 @@ class Section1 extends Section {
 
         //TODO
     }
-
-    get filter(){
-        return this.state.filter;
-    }
-
-    get manager(){
-        return this.state.itemManagers[this.filter];
-    }
-
-    get managers(){
-        return this.state.itemManagers;
-    }
-
-    set manager(newManager){
-        print("App.js 248: setter called: ", newManager);
-        let managers = this.managers;
-        managers[this.filter] = newManager;
-        this.setState({
-            managers: managers
-        })
-    }
-
 
     /**
      *
@@ -418,7 +426,7 @@ class Section1 extends Section {
         let items = _.getItemsArr(filter);
         let manager = _.state.itemManagers[filter];
         let activeIndex = manager ? manager.getActiveIndex() : -1;
-        print("360: items: ", items);
+
         return (
 
             <div className={"row main_section1"}>
@@ -487,10 +495,38 @@ class Section1 extends Section {
  */
 class Section2 extends Section {
     constructor(props) {
+        print("492 Section2 Constructor called: ");
         super(props);
         this._boxClassName = sentencesBoxClassName;
         this._endpoint = unclusteredSentencesEndpoint;
         this._itemClassName = sentenceClassName;
+
+    }
+    /**
+     *
+     * @return {Promise<Awaited<*>[]>}
+     */
+    async componentDidMount(){
+        print("Section2 Component did mount 502: ", this);
+        const _ = this;
+        let manager = new SentencesManager(
+            _.props.q,
+            sectionEndpoints[_.props.i - 1],
+        );
+        _.setState({
+            itemManagers: [manager]
+        })
+        return manager.initiate()
+            .then( () => {
+                print("sentences manager initiated!");
+
+                print("99: ", _.state.itemManagers);
+                //after initiating, call setState to trigger a re-render.
+                _.setState({
+                    itemManagers: [manager]
+                })
+                manager.setActiveIndex(manager.count()-1);
+            })
 
     }
 
@@ -499,14 +535,6 @@ class Section2 extends Section {
     // SO that when triggering a loadMore, ...
 
 
-    async componentDidMount() {
-        const _ = this;
-        return super.componentDidMount().then(() => {
-            let manager = _.state.itemManagers[0];
-            manager.setActiveIndex(manager.count()-1);
-
-        })
-    }
 
     render(){
         const _ = this;
@@ -519,11 +547,11 @@ class Section2 extends Section {
                 </SectionHead>
                 <SectionBody>
                     <UnclusteredSentencesWrapper>
-                        {items.map((sentence, index) =>
-                            <UnclusteredSentence
-                                key={index}
-                                text={sentence.sentence_text}/>
-                        )}
+                    {items.map((sentence, index) =>
+                        <UnclusteredSentence
+                            key={index}
+                            text={sentence.sentence_text}/>
+                    )}
                     </UnclusteredSentencesWrapper>
                 </SectionBody>
                 {/*<SectionHead i={2} cb={this.onSearch.bind(this)} cbClear={this.onClear.bind(this)} title="Unclustered Sentences"></SectionHead>*/}
@@ -776,7 +804,7 @@ class ClusterCardBody extends React.Component {
 
     render( ) {
         const _ = this;
-        print("735: ", this.props);
+        // print("735: ", this.props);
         var i = 0;
         return (
             <div className={"row ClusterCard_body hideScrollBar"}>
@@ -919,7 +947,7 @@ class UnclusteredSentence extends React.Component {
     }
 
     render(){
-
+        // print("923: my props: ", this.props);
         return (
             <div className={"row unclustered-sentence"}>{this.props.text}</div>
         )
