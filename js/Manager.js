@@ -24,11 +24,11 @@ class SectionItemManager {
      * @param q
      * @param filter
      */
-    constructor(q, endpoints, filter=undefined ) {
+    constructor(q, endpoints, filter=0 ) {
         this._itemstore = new Store();
         this._endpoints = endpoints; //e.g "/cluster/", or "/sentence"
         this._itemIDstore = new Store()
-        this._filter = filter;
+        this._filter = filter;  //0: all, 1:accepted only, 2: unacceptedonly
         this._q = q;
         this._activeindex = 0;
     }
@@ -37,7 +37,8 @@ class SectionItemManager {
     set filter(newFilter){
         //TODO
         //TODO there's supposed to be some major logic here
-        this._filter = newFilter;
+        // this._filter = newFilter;
+        print("41: new filter: ", newFilter);
     }
 
     get filter(){
@@ -48,6 +49,22 @@ class SectionItemManager {
         return this._activeindex;
     }
 
+    //TODO
+    _isfilteredOut(index){
+        print("53: isFilteredOut called. FIlter: ", this.filter);
+        return false;
+        // const _ = this;
+        // let item = _.getAt(index);
+        // switch (_.filter){
+        //     case 0:
+        //         return false;
+        //     case 1:
+        //         return !Boolean(item.accepted);
+        //     case 2:
+        //         return Boolean(item.accepted);
+        // }
+    }
+
     set activeIndex(newIndex){
         const _ = this;
         print( "setter called from:  active index: ", _._activeindex, "newIndex: ", newIndex);
@@ -56,24 +73,24 @@ class SectionItemManager {
 
         if(newIndex < _.count()) {
             this._activeindex = newIndex;
-            print("successfully set active index to be: ", this.activeIndex);
         }
         else {
             /**
              * NOTE: AUTOMATICALLY FETCH MORE FROM API, IF NEW INDEX IS OUT OF BOUNDS.
              */
-            print("Store.js 140: incrementIndex called. Out of bounds. ")
             if(_.count() < _._itemIDstore.count()){
                 let newItemPromises = _._prepItems(5, _.count());
                 newItemPromises.then(items => {
-                    print("103: ", items);
                     _.stockUp(items);
-                    print("finished stocking up: ", _.getAllItems());
                     _._activeindex = newIndex;
-                    print("successfully set active index to be: ", this.activeIndex);
                 })
             }
         }
+
+        // if(this._isfilteredOut(_.activeIndex)) {
+        //     print("95: got filtered out. ");
+        //     _.activeIndex+=1;
+        // }
     }
 
 
@@ -235,7 +252,6 @@ class SectionItemManager {
         if(!IDObject) return;
         let id = IDObject.id;
         let queryString = _._idtoQueryString(id, which, customEndpoint);
-        print("225: ", id, queryString, customEndpoint);
         return _._q(queryString);
     }
 
@@ -359,7 +375,6 @@ class SentencesManager extends SectionItemManager {
     }
 
     async _prepItems(n, starting=0){
-        print("section 2 prep called!");
         const _ = this;
         let itemPromises = _.fetchN(n,1, undefined,starting);
         return itemPromises.then(items => items.map(item => item[0]));

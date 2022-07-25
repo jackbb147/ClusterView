@@ -11,7 +11,8 @@ class Store{
      * @param arr new items.
      */
     append(arr){
-        print("append called: ", arr);
+        // console.trace();
+        // print("append called: ", arr);
         this.items.push(...arr);
     }
 

@@ -34,7 +34,8 @@ class Section extends React.Component {
 
         this.state = {
             displayTemp: false, // if true, display temporary items.
-            managers:[new SectionItemManager()]
+            managers:[new SectionItemManager()],
+            _managerIndex: 0 //which manager to use.
         }
         this._boxClassName = undefined;
         this._itemClassName = undefined;
@@ -75,12 +76,19 @@ class Section extends React.Component {
         return this.state.filter;
     }
 
+    /**
+     * set filter!
+     * @param newFiler
+     */
     set filter(newFiler){
+        print("79: set filter: new filter", newFiler);
+        if(newFiler > 2 ) newFiler = 0;
         this.setState({filter: newFiler});
     }
 
+    //TODO
     get manager(){
-        return this.state.managers[this.filter?this.filter:0];
+        return this.state.managers[this.state._managerIndex];
     }
 
     set manager(newManager){
@@ -229,9 +237,11 @@ class Section1 extends Section {
      * @private
      */
     _filterDisplay(){
-        print("594: filter called");
+
         this.filter += 1;
+        print("594: filter now: ", this.filter);
         this.manager.filter = this.filter;
+        this.manager = this.manager;
         //TODO
     }
 
