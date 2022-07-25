@@ -350,48 +350,48 @@ class Section1 extends Section {
      * for removing a feedback entry from a cluster card.
      */
     onRemoveFeedback(){
-        const _ = this;
-        const q = _.props.q;
-
-
+        const   _ = this,
+                q = _.props.q,
+                manager = _.manager;
 
         function f(clusterID, sentenceID, cardIndex){
-            print("729: remove feedback called with: ", clusterID, sentenceID, cardIndex);
-            //send a remove query to the API
-            var v = true;
-            if(clusterID != -666 && v){
-                q(`removesentence/${clusterID}/${sentenceID}`)
-                    .then (val => {
-                        _._buildItem(clusterID).then(cluster => {
-                            //TODO
-                            let index = cardIndex;
-                            print("637: updated cluster: ", cluster)
-                            //TODO 2. swap this with the old one in the current items array.
-                            let items = _.state.displayTemp ? _.state.tempItems : _.state.loadedItems;
-                            items[index] = cluster;
-                            //TODO 2 then setstate to trigger a rerendering.
-                            if(_.state.displayTemp) {
-                                _.setState({
-                                    tempItems: items
-                                })
-                            }else{
-                                _.setState({
-                                    loadedItems: items
-                                })
-                            }
-
-
-                        })
-                    })
-            }
+            print2("357: remove feedback called with: ", clusterID, sentenceID, cardIndex);
+            _.manager.update(cardIndex,
+                "removesentence",
+                clusterID,
+                sentenceID 
+            )
+                .then (newManager => {
+                    _.manager = newManager;
+                })
+            // //send a remove query to the API
+            // var v = true;
+            // if(clusterID != -666 && v){
+            //     q(`removesentence/${clusterID}/${sentenceID}`)
+            //         .then (val => {
+            //             _._buildItem(clusterID).then(cluster => {
+            //                 //TODO
+            //                 let index = cardIndex;
+            //                 print("637: updated cluster: ", cluster)
+            //                 //TODO 2. swap this with the old one in the current items array.
+            //                 let items = _.state.displayTemp ? _.state.tempItems : _.state.loadedItems;
+            //                 items[index] = cluster;
+            //                 //TODO 2 then setstate to trigger a rerendering.
+            //                 if(_.state.displayTemp) {
+            //                     _.setState({
+            //                         tempItems: items
+            //                     })
+            //                 }else{
+            //                     _.setState({
+            //                         loadedItems: items
+            //                     })
+            //                 }
             //
-            // var itemPromise = _._buildItem(itemID);
-            // itemPromise.then( item => {
             //
-            // })
-            //on resolve, fetch the cluster
-
-            // on resolve, set state
+            //             })
+            //         })
+            // }
+            // // on resolve, set state
         }
 
         return f;
@@ -442,7 +442,6 @@ class Section1 extends Section {
                         scrollcb={_._handleScroll()}
                     >
                     {items.map((cardInfo, index) => {
-
                             let {accepted, title, feedbacks, id} = cardInfo,
                                 key = index,
                                 display = index === activeIndex;
@@ -455,6 +454,7 @@ class Section1 extends Section {
                                                 display={display}
                                                 index={index}
                                                 headCB={this._toggleAcceptedStatus()}
+                                                removeCB={this.onRemoveFeedback()}
                             />
                     })}
                     </ClusterWrapper>

@@ -320,6 +320,7 @@ class SectionItemManager {
             queryString += ("/" + id.id);
         else
             customTails.map(tail => queryString += `/${tail}`)
+        P("QUERYSTRING: ", queryString);
         return _._q(queryString)
             .then(val => _._prepItems(1, i)
                                 .then(obj => {
