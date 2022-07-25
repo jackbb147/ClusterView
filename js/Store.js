@@ -6,6 +6,14 @@ class Store{
         this.items = [];
     }
 
+    /**
+     * append some new items into the end of my items.
+     * @param arr new items.
+     */
+    append(arr){
+        this.items.push(...arr);
+    }
+
     setItems(arr){
         this.items = arr;
     }
@@ -128,19 +136,28 @@ class SectionItemManager {
             this._activeindex = i;
     }
 
+    /**
+     * NOTE: AUTOMATICALLY FETCH MORE FROM API, IF NEW INDEX IS OUT OF BOUNDS.
+     * @param n
+     */
     incrementIndex(n=1){
-
+        const _ = this;
         let count = this._itemstore.count();
         if(this._activeindex + n < count) this._activeindex+=n;
+        else {
+            print("Store.js 140: incrementIndex called. Out of bounds. ")
+            _.fetchN(n, 1)
+                .then(items => {
+                    _.stockUp(items);
+                    print("152: finished stocking up: new items: ", _.getAllItems());
+                })
+        }
     }
 
     decrementIndex(n=1){
         let count = this._itemstore.count();
         if(this._activeindex - n >= 0) this._activeindex-=n;
     }
-
-
-
 
     /**
      * remove the item at index i.
@@ -208,18 +225,19 @@ class SectionItemManager {
             })
     }
 
+
     /**
      * stock up the item store by fetching all items.
-     * @return {Promise<Awaited<*>[]>}
+     * @param n fetch how many? default to 10.
+     * @return {Promise<void>}
+     * @private
      */
     async _initiateItemStore(n= 10){
         const _ = this;
-        let itemsPromise = this.fetchN(n, 1);
-
-        return itemsPromise.then( items => {
-          _._itemstore.setItems(items);
-        })
+        let itemsPromise = _._prepItems(n);
+        return itemsPromise.then( items => _._itemstore.setItems(items));
     }
+
 
     /**
      * fetch one item (whose ID is at index i of ID store) from the API
@@ -239,19 +257,27 @@ class SectionItemManager {
      * fetch N items(i.e all IDs in ID store) from the API.
      * @param which: 0 or 1
      * @param n: how many to fetch.
+     * @param starting Number starting index
      * @return {Promise<Awaited<unknown>[]>}
      */
-    async fetchN(n, which, customEndpoint){
+    async fetchN(n, which, customEndpoint, starting=0){
         const _ = this;
 
         let promises = [];
         for(let i = 0; i < n; i++)
-            promises.push(_.fetchOne(i, which, customEndpoint));
+            promises.push(_.fetchOne(starting+i, which, customEndpoint));
 
         return Promise.all(promises);
     }
 
-
+    /**
+     * TODO load the given items into items store.
+     */
+    stockUp(newItems){
+        // _._itemstore.add
+        const _ = this;
+        _._itemstore.append(newItems);
+    }
     async fetchAll() {
         let count = this._itemIDstore.count();
         return fetchN(count);
@@ -272,55 +298,56 @@ class ClustersManager extends SectionItemManager {
 
     }
 
-    /**
-     * fetch one item (whose ID is at index i of ID store) from the API
-     * the API returns in the following format: "text$1234" where 1234 is the feedback ID.
-     * @param which: 0 or 1. Which endpoint to use. e.g. /cluster/46904 is not the same as /clusterfeedbacks/46904
-     * @param i index of item ID
-     * @return {Promise<void>}
-     */
-    // async fetchOne(i, which=0){
-    //     const _ = this;
-    //     let endpoint = _._endpoints[which];
-    //     let id = _._itemIDstore.get(i).id;
-    //     let queryString = _._idtoQueryString(id, which);
-    //     return _._q(queryString);
-    // }
 
 
     /**
-     * stock up the item store by fetching all items.
-     * @return {Promise<Awaited<*>[]>}
+     * fetch from API, then prep the fetched information into "items".
+     * @return the Promise of an array of prepped "items" that can be stored in items store.
+     * @private
      */
-    async _initiateItemStore(n= 10){
+    async _prepItems(n){
         const _ = this;
         let clustersPromise = this.fetchN(n, 0, "cluster");
         let feedbacksPromise = this.fetchN(n, 1);
         return Promise.all([clustersPromise, feedbacksPromise])
-            .then(values => {
-            let items = [];
-            let count = values[0].length;
-            for(let i = 0; i < count; i++){
-                let cluster = values[0][i][0],
-                    feedbacks = this._processFB(values[1][i].filter(fb => fb)); //because some feedbacks are null.
-
-                if(!cluster ) continue;
-                let item = {
-                    title: cluster.title,
-                    feedbacks: feedbacks,
-                    accepted: cluster.accepted,
-                    id: cluster.id
-                }
-
-                items.push(item);
-            }
-
-            _._itemstore.setItems(items);
-
-        })
-
+            .then(values => _._buildObjects(values));
     }
 
+    /**
+     *
+     * @param arr Array [clusters[], feedbacks[]]
+     * @private
+     */
+    _buildObjects(arr){
+        const _ = this;
+        let items = [];
+        let count = arr[0].length;
+        for(let i = 0; i < count; i++){
+            let cluster = arr[0][i][0],
+                feedbacks = this._processFB(arr[1][i].filter(fb => fb)); //because some feedbacks are null.
+            if(!cluster ) continue;
+            items.push(_._buildObject(cluster, feedbacks));
+        }
+        return items;
+    }
+
+    /**
+     *
+     * @param cluster
+     * @param feedbacks
+     * @return {{feedbacks, accepted: *, id, title: (string|string|*)}}
+     * @private
+     */
+    _buildObject(cluster, feedbacks){
+        let item = {
+            title: cluster.title,
+            feedbacks: feedbacks,
+            accepted: cluster.accepted,
+            id: cluster.id
+        }
+
+        return item;
+    }
 
     /**
      * TODO: a little ugly
@@ -345,10 +372,6 @@ class ClustersManager extends SectionItemManager {
 
     }
 
-
-
-
-
 }
 
 /**
@@ -359,19 +382,11 @@ class SentencesManager extends SectionItemManager {
         super(...args);
     }
 
-    /**
-     * stock up the item store by fetching all items.
-     * @return {Promise<Awaited<*>[]>}
-     */
-    async _initiateItemStore(n= 10){
-        print("Sentence Manager initiate item store called");
+    async _prepItems(n){
+        print("section 2 prep called!");
         const _ = this;
-        return super._initiateItemStore(n)
-            .then( () => {
-                _._itemstore.setItems(
-                    _._itemstore.getItems().map(item => item[0])//see API doc for format.
-                )
-            })
+        let itemPromises = _.fetchN(n,1);
+        return itemPromises.then(items => items.map(item => item[0]));
     }
 
 }
