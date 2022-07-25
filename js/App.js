@@ -12,7 +12,7 @@ const clusterClassName = "ClusterCard";
 const sentenceClassName = "unclustered-sentence";
 const acceptedClassName = "accepted";
 const unacceptedClassName = "unaccepted";
-
+const sectionEndpoints = [clusterEndpoint, sentencesEndpoint];
 
 // ==================== COMPONENTS ====================
 class SearchBar extends React.Component {
@@ -68,13 +68,11 @@ class Section extends React.Component {
      */
     constructor(props) {
         super(props);
+
         this.state = {
-            loadedItems: [],
-            tempItems: [], //temporary item storage (for search results, for example.)
-            displayTemp: false // if true, display temporary items.
+            displayTemp: false, // if true, display temporary items.
+            itemManagers:[]
         }
-        this._store = undefined;
-        this._tempStore = undefined;
         this._boxClassName = undefined;
         this._itemClassName = undefined;
         this._title = undefined;
@@ -82,96 +80,24 @@ class Section extends React.Component {
         this._gettingSome = false;
     }
 
-    /**
-     * fetch item IDs from the API.
-     * @param filter: (optional)  extra string to append to the queryString.
-     * The resulting query string is "_endpoint/filter"
-     * @return {Promise<void>}
-     * @private
-     */
-    async _loadItemIDs(filter){
-        let queryString = this._endpoint;
-        if(filter){
-            //TODO};
-            queryString += "/";
-            queryString += filter;
-        }
-        return this.props.q(queryString);
-    }
-
-
-
-    /**
-     * INITIATE A STORE AND RETURN IT
-     *  check the API documentation for the format of each item.
-     *  @param filter: optional filter for loading item IDs.
-     */
-    async _initiateStore(filter){
+    componentDidMount(){
         const _ = this;
-        var itemIDs = this._loadItemIDs(filter);
-        return itemIDs.then(arr => {
-            return new Store(arr);
+        let manager = new SectionItemManager(
+            _.props.q,
+            sectionEndpoints[_.props.i - 1],
+        );
+        _.setState({
+            itemManagers: [manager]
         })
-    }
+        manager.initiate()
+            .then( () => {
+                print("manager initiated!");
 
-
-
-    /**
-     *
-     * @param ID
-     * @return {Promise<void>}
-     * @private
-     */
-    async _buildItem(ID){
-
-    }
-
-
-    /**
-     * TODO refactor so that accepting/unaccepting a cluster
-     * triggers this function instead of hardcoding the loading  process again.
-     * @return {Promise<void>}
-     * @private
-     */
-    async _loadItem(itemID, to){
-        //TODO
-    }
-    /**
-     * loads n items
-     * @param n
-     * @param recurse if true, call itself to get more cards
-     * @param from Object (optional) a Store object to load from. If undefined, load from this._store instead.
-     * @param to Array (optional) where to store the loaded items. If undefined, store in this.tate.loadedItems array.
-     * @return {Promise<void>}
-     */
-    async _loadItems(n=5, recurse=false, from, to){
-        const _ = this;
-        if(_._gettingSome) return; // do not get some when we are still getting some.
-        if(from === undefined) from = this._store;
-
-        _._gettingSome = true;
-        const bunch = from.getSome(n);
-        if(bunch.length < 1) return;
-        var itemPromises = [];
-        bunch.forEach(item => {
-            itemPromises.push(_._buildItem(item.id));
+                print("99: ", _.state.itemManagers);
         })
 
-        //store the loaded items.
-        return Promise.all(itemPromises).then( vals => {
-            if(to === undefined){
-                _.state.loadedItems.push(...vals);
-                _.setState({
-                    loadedItems: _.state.loadedItems
-                })
-            }else{
-                to.push(...vals)
-            }
-            _._gettingSome = false;
-
-            if(recurse) _._loadItems(n);
-        })
     }
+
 
 
     /**
@@ -196,34 +122,6 @@ class Section extends React.Component {
         }
 
         return f
-    }
-
-
-    /**
-     * hide/unhide all items currently on display, by toggling their display(hide -> display = none)
-     */
-    _toggleDisplayedItems(){
-        //TODO
-        print("app.js toggleDisplayedItems called!");
-        var currentDisplayTemp = this.state.displayTemp;
-        //
-        // document.querySelector("."+this._itemClassName).classList.toggle("no-display")
-        this.setState({
-            displayTemp: !currentDisplayTemp
-        })
-    }
-
-    _displayTempItems(){
-        this.setState({
-            displayTemp: true
-        })
-    }
-
-
-    _displayLoadedItems(){
-        this.setState({
-            displayTemp: false
-        })
     }
 
 
@@ -576,87 +474,22 @@ class Section1 extends Section {
      */
     constructor(props) {
         super(props);
-        // this.state.displayALl = true;
-        // this.state.displayAccepted = true;
-        this.state._activeCardIndex = 0;
         this.state.filter = 0;  // 0 for display all, 1 for accepted only, 2 for unaccepted only
-
         this._boxClassName = clustersBoxClassName;
         this._endpoint = clusterEndpoint;
-        this._itemClassName = clusterClassName;
     }
 
 
-
-
-    /**
-     * resets the active item index to 0.
-     * @private
-     */
-    _resetIndex(){
-        this.setState({
-            _activeCardIndex: 0
-        })
-    }
-
-    _decrementIndex(){
-        var val = this.state._activeCardIndex;
-        this.setState({
-            _activeCardIndex: val-1
-        })
-    }
-
-    _displayTempItems(){
-        this._resetIndex();
-        super._displayTempItems();
-    }
-
-
-    /**
-     * grab the feedback entries associated to a cluster.
-     * @param clusterID
-     * @return Object {title, feedbacks, accepted, id, ...}
-     * @private
-     */
-    async _buildItem(clusterID){
-        const q = this.props.q;
-        const cluster = q(`cluster/${clusterID}`);
-        const feedbacks = q(`clusterfeedbacks/${clusterID}`);
-        return Promise.all([cluster, feedbacks]).then(values => {
-            const  cluster = values[0][0], feedbacks = values[1];
-            return {
-                title: cluster.title,
-                feedbacks,
-                accepted: cluster.accepted,
-                id: clusterID
-            }
-        })
-    }
-
-
-
-    /**
-     * AFTER MOUNTING, SILENTLY LOAD ALL
-     * CLUSTERS, 3 AT A TIME, UNTIL ALL IS LOADED.
-     */
-    componentDidMount(){
-        const _ = this;
-        const q = this.props.q;
-        print("I(SECTION1) MOUNTED!");
-        _._initiateStore()
-            .then(store => {
-                _._store = store;
-                _._loadItems(5)
-            })
-    }
-
-    _incrementIndex(){
-        var val = this.state._activeCardIndex;
-        this.setState({
-            _activeCardIndex: val+1
-        })
-    }
-
+    //
+    // /**
+    //  * AFTER MOUNTING, SILENTLY LOAD ALL
+    //  * CLUSTERS, 3 AT A TIME, UNTIL ALL IS LOADED.
+    //  */
+    // componentDidMount(){        // const _ = this;
+    //     // const q = this.props.q;
+    //     // print("I(SECTION1) MOUNTED!");
+    //
+    // }
 
     /**
      * toggles the filter between the three modes.
@@ -805,60 +638,63 @@ class Section1 extends Section {
      * @return {JSX.Element}
      */
     render(){
-        print("804: new filter value: ", this.state.filter);
+        // print("804: new filter value: ", this.state.filter);
         const _ = this;
-        var items = this.state.displayTemp ? this.state.tempItems : this.state.loadedItems;
-        var filter = {
-            displayAll: _.state.filter === 0,
-            displayAccepted: !(_.state.filter === 2)
-        }
-        var title = filter.displayAll
-            ? "All Cluster"
-            : filter.displayAccepted
-                ? "Accepted Clusters"
-                : "Unaccepted Clusters";
-        items =  items.filter(child => {
-            return (filter.displayAll ||
-                (filter.displayAccepted && child.accepted) ||
-                (!filter.displayAccepted && !child.accepted))
-        });
-        //load more, if items is 0
-        print("818: items: ", items);
+        // var items = this.state.displayTemp ?
+        //     this.state.tempItems : 
+        //     this.state.loadedItems;
+        // var items = this.state.itemManager[]
+        // var filter = {
+        //     displayAll: _.state.filter === 0,
+        //     displayAccepted: !(_.state.filter === 2)
+        // }
+        // var title = filter.displayAll
+        //     ? "All Cluster"
+        //     : filter.displayAccepted
+        //         ? "Accepted Clusters"
+        //         : "Unaccepted Clusters";
+        // items =  items.filter(child => {
+        //     return (filter.displayAll ||
+        //         (filter.displayAccepted && child.accepted) ||
+        //         (!filter.displayAccepted && !child.accepted))
+        // });
+        // //load more, if items is 0
+        // print("818: items: ", items);
 
         return (
 
             <div className={"row main_section1"}>
-                <SectionHead
-                    filterCB={this._filterDisplay.bind(this)}
-                    i={1}
-                    cb={this.onSearch.bind(this)}
-                    cbClear={this.onClear.bind(this)}
-                    title={title}/>
-                <SectionBody>
-                    <ClusterWrapper
-                        scrollcb={_._handleScroll()}
-                        leftBtnClick={this.onLeftBtnClick.bind(this)}
-                        rightBtnClick={this.onRightBtnClick.bind(this)}
-                        filter={filter}>
-                        {items.map((cardInfo, index) => {
-                                let accepted = cardInfo.accepted;
-                                return <ClusterCard key={index}
-                                                    title={cardInfo.title}
-                                                    accepted={accepted}
-
-                                                    feedbacks={cardInfo.feedbacks}
-                                                    display={index === _.state._activeCardIndex}
-                                                    headCB={this._toggleAcceptedStatus()} //the callback function for (un)acceptBtn
-                                                    id={cardInfo.id}
-                                                    index={index}
-                                                    removeCB={this.onRemoveFeedback()} //remove a feedback entry
-                                >
-                                </ClusterCard>
-                            }
-
-                        )}
-                    </ClusterWrapper>
-                </SectionBody>
+                {/*<SectionHead*/}
+                {/*    filterCB={this._filterDisplay.bind(this)}*/}
+                {/*    i={1}*/}
+                {/*    cb={this.onSearch.bind(this)}*/}
+                {/*    cbClear={this.onClear.bind(this)}*/}
+                {/*    title={title}/>*/}
+                {/*<SectionBody>*/}
+                {/*    <ClusterWrapper*/}
+                {/*        scrollcb={_._handleScroll()}*/}
+                {/*        leftBtnClick={this.onLeftBtnClick.bind(this)}*/}
+                {/*        rightBtnClick={this.onRightBtnClick.bind(this)}*/}
+                {/*        filter={filter}>*/}
+                {/*        {items.map((cardInfo, index) => {*/}
+                {/*                let accepted = cardInfo.accepted;*/}
+                {/*                return <ClusterCard key={index}*/}
+                {/*                                    title={cardInfo.title}*/}
+                {/*                                    accepted={accepted}*/}
+                
+                {/*                                    feedbacks={cardInfo.feedbacks}*/}
+                {/*                                    display={index === _.state._activeCardIndex}*/}
+                {/*                                    headCB={this._toggleAcceptedStatus()} //the callback function for (un)acceptBtn*/}
+                {/*                                    id={cardInfo.id}*/}
+                {/*                                    index={index}*/}
+                {/*                                    removeCB={this.onRemoveFeedback()} //remove a feedback entry*/}
+                {/*                >*/}
+                {/*                </ClusterCard>*/}
+                {/*            }*/}
+                
+                {/*        )}*/}
+                {/*    </ClusterWrapper>*/}
+                {/*</SectionBody>*/}
             </div>
         )
     }
@@ -927,45 +763,32 @@ class Section2 extends Section {
 
     }
 
-    /**
-     *
-     * @param clusterID
-     * @return
-     * @private
-     */
-    async _buildItem(sentenceID){
-        const q = this.props.q;
-        const sentence = q(`sentence/${sentenceID}`);
-
-        return sentence.then(val => val[0]);
-    }
-
-    componentDidMount(){
-        const _ = this;
-        const q = this.props.q;
-        print("I(SECTION2) MOUNTED!");
-        _._initiateStore()
-            .then(store => {
-                _._store = store;
-                print("section 2: ", store.getAll());
-                _._loadItems(10, false);
-
-            })
-    }
+    // componentDidMount(){
+    //     const _ = this;
+    //     const q = this.props.q;
+    //     print("I(SECTION2) MOUNTED!");
+    //     _._initiateStore()
+    //         .then(store => {
+    //             _._store = store;
+    //             print("section 2: ", store.getAll());
+    //             _._loadItems(10, false);
+    //
+    //         })
+    // }
 
     render(){
         const _ = this;
-        var items = this.state.displayTemp ? this.state.tempItems : this.state.loadedItems;
+        // var items = this.state.displayTemp ? this.state.tempItems : this.state.loadedItems;
         return (
             <div className={"row main_section2"}>
-                <SectionHead i={2} cb={this.onSearch.bind(this)} cbClear={this.onClear.bind(this)} title="Unclustered Sentences"></SectionHead>
-                <SectionBody>
-                    <UnclusteredSentencesWrapper cb={(this._handleScroll)()} loadMore={()=>{_._loadItems(5,false)}}>
-                        {items.map((sentence, index) =>
-                            <UnclusteredSentence key={index} text={sentence.sentence_text}></UnclusteredSentence>
-                        )}
-                    </UnclusteredSentencesWrapper>
-                </SectionBody>
+                {/*<SectionHead i={2} cb={this.onSearch.bind(this)} cbClear={this.onClear.bind(this)} title="Unclustered Sentences"></SectionHead>*/}
+                {/*<SectionBody>*/}
+                {/*    <UnclusteredSentencesWrapper cb={(this._handleScroll)()} loadMore={()=>{_._loadItems(5,false)}}>*/}
+                {/*        {items.map((sentence, index) =>*/}
+                {/*            <UnclusteredSentence key={index} text={sentence.sentence_text}></UnclusteredSentence>*/}
+                {/*        )}*/}
+                {/*    </UnclusteredSentencesWrapper>*/}
+                {/*</SectionBody>*/}
             </div>
         )
     }

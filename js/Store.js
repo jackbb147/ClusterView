@@ -2,9 +2,7 @@
  * manages a list of items.
  */
 class Store{
-    constructor(q, queryString){
-        this.q = q;
-        this.queryString = queryString;
+    constructor(queryString){
         this.items = [];
     }
 
@@ -61,14 +59,17 @@ class Store{
 class SectionItemManager {
     /**
      *
-     * @param q :
+     * @param q
+     * @param filter
      */
-    constructor(q, endpoint ) {
+    constructor(q, endpoint, filter=undefined ) {
         this._itemstore = new Store();
         this._endpoint = endpoint; //e.g "/cluster/", or "/sentence"
         this._itemIDstore = new Store()
+        this._filter = filter;
         this._q = q;
     }
+
 
     /**
      * call this to initiate the item manager.
@@ -77,8 +78,9 @@ class SectionItemManager {
      */
     async initiate(){
         const _ = this;
-
-        return _._initiateIDStore()
+        let queryString = `${_._endpoint}` //TODO
+        if(this._filter) queryString += `/${this._filter};`
+        return _._initiateIDStore(queryString)
             .then(() => _._initiateItemStore());
     }
 
@@ -88,7 +90,7 @@ class SectionItemManager {
      */
     get(i=-1){
         //TODO
-        return i === -1 ? this._itemstore.getItems() || this._itemstore.get(i);
+        return i === -1 ? this._itemstore.getItems() : this._itemstore.get(i);
     }
 
 
@@ -148,6 +150,7 @@ class SectionItemManager {
         return _._q(queryString)
             .then(arr => {
                 _._itemIDstore.setItems(arr);
+                print("store 155: ID STORE INITIATED: ", _._itemIDstore);
             })
     }
 
@@ -155,9 +158,9 @@ class SectionItemManager {
      * stock up the item store by fetching all items.
      * @return {Promise<Awaited<*>[]>}
      */
-    async _initiateItemStore(){
+    async _initiateItemStore(n= 10){
         const _ = this;
-        let itemsPromise = this.fetchAll();
+        let itemsPromise = this.fetchN(n);
 
         return itemsPromise.then( items => {
           _._itemstore.setItems(items);
@@ -170,24 +173,31 @@ class SectionItemManager {
      */
     async fetchOne(i){
         const _ = this;
-        let id = _._itemIDstore.get(i);
-        return _._q(_._idtoQueryString(id));
+        let id = _._itemIDstore.get(i).id;
+        let queryString = _._idtoQueryString(id);
+        print("177: ", id);
+        print("178: ", queryString);
+        return _._q(queryString);
     }
 
-
     /**
-     * fetch all items(i.e all IDs in ID store) from the API.
+     * fetch N items(i.e all IDs in ID store) from the API.
      * @return {Promise<Awaited<unknown>[]>}
      */
-    async fetchAll() {
+    async fetchN(n){
         const _ = this;
-        var count = _._itemIDstore.count();
 
         let promises = [];
-        for(let i = 0; i < count; i++)
+        for(let i = 0; i < n; i++)
             promises.push(_.fetchOne(i));
 
         return Promise.all(promises);
+    }
+
+
+    async fetchAll() {
+        let count = this._itemIDstore.count();
+        return fetchN(count);
     }
 }
 
