@@ -88,7 +88,6 @@ class Section extends React.Component {
         return this.state.managers;
     }
     set managers(newManagers){
-        print("setter called: managers: ", newManagers)
         this.setState({managers: newManagers})
     }
 
