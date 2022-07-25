@@ -53,18 +53,22 @@ class Store{
  *      item id: e.g. cluster/46904, sentence/12389
  *      item: the actual item.
  *
+ * TWO ENDPOINTS:
+ *      first one is for:
+ *      second one is for:
+ *
  * Section1 has a(or multiple, for filtering) ClustersManager(s),
  * Section2 has a Sentences manager.
  */
 class SectionItemManager {
     /**
-     *
+
      * @param q
      * @param filter
      */
-    constructor(q, endpoint, filter=undefined ) {
+    constructor(q, endpoints, filter=undefined ) {
         this._itemstore = new Store();
-        this._endpoint = endpoint; //e.g "/cluster/", or "/sentence"
+        this._endpoints = endpoints; //e.g "/cluster/", or "/sentence"
         this._itemIDstore = new Store()
         this._filter = filter;
         this._q = q;
@@ -78,7 +82,8 @@ class SectionItemManager {
      */
     async initiate(){
         const _ = this;
-        let queryString = `${_._endpoint}` //TODO
+        let queryString = `${_._endpoints[0]}` //TODO
+        print("84: queryString: ", queryString);
         if(this._filter) queryString += `/${this._filter};`
         return _._initiateIDStore(queryString)
             .then(() => _._initiateItemStore());
@@ -133,10 +138,11 @@ class SectionItemManager {
     /**
      * turn an id into a queryable string. e.g. 46905 -> /cluster/46905
      * @param id
+     * @param which 0 or 1, which endpoint to use.
      */
-    _idtoQueryString(id){
+    _idtoQueryString(id, which ){
         //TODO
-        return `${this._endpoint}/${id}`;
+        return `${this._endpoints[which]}/${id}`;
     }
 
     /**
@@ -160,21 +166,26 @@ class SectionItemManager {
      */
     async _initiateItemStore(n= 10){
         const _ = this;
-        let itemsPromise = this.fetchN(n);
+        let itemsPromise = this.fetchN(n, 1);
 
         return itemsPromise.then( items => {
+            print("166: items: ", items);
           _._itemstore.setItems(items);
         })
     }
 
     /**
      * fetch one item (whose ID is at index i of ID store) from the API
+     * @param which: 0 or 1. Which endpoint to use.
+     * @param i index of item ID
      * @return {Promise<void>}
      */
-    async fetchOne(i){
+    async fetchOne(i, which=0){
         const _ = this;
+        let endpoint = _._endpoints[which];
         let id = _._itemIDstore.get(i).id;
-        let queryString = _._idtoQueryString(id);
+        print("184: id: ", id);
+        let queryString = _._idtoQueryString(id, which);
         print("177: ", id);
         print("178: ", queryString);
         return _._q(queryString);
@@ -182,14 +193,16 @@ class SectionItemManager {
 
     /**
      * fetch N items(i.e all IDs in ID store) from the API.
+     * @param which: 0 or 1
+     * @param n: how many to fetch.
      * @return {Promise<Awaited<unknown>[]>}
      */
-    async fetchN(n){
+    async fetchN(n, which){
         const _ = this;
 
         let promises = [];
         for(let i = 0; i < n; i++)
-            promises.push(_.fetchOne(i));
+            promises.push(_.fetchOne(i, which));
 
         return Promise.all(promises);
     }

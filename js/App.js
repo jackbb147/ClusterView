@@ -7,12 +7,17 @@ const searchBarClassName = "searchBar"; //TODO: refactor this in section class i
 const clustersBoxClassName = "clusters-box";    //TODO  refactoring
 const sentencesBoxClassName = "unclusteredSentencesWrapper"; //TODO refactoring
 const clusterEndpoint = "clusters";
-const sentencesEndpoint = "unclusteredsentences";
-const clusterClassName = "ClusterCard";
+const clusterFeedbacksEndpoint = "clusterfeedbacks";
+const unclusteredSentencesEndpoint = "unclusteredsentences";
+const sentenceEndpoint = "sentence";
 const sentenceClassName = "unclustered-sentence";
+
 const acceptedClassName = "accepted";
 const unacceptedClassName = "unaccepted";
-const sectionEndpoints = [clusterEndpoint, sentencesEndpoint];
+const sectionEndpoints = [
+    [clusterEndpoint, clusterFeedbacksEndpoint],
+    [unclusteredSentencesEndpoint, sentenceEndpoint]
+];
 
 // ==================== COMPONENTS ====================
 class SearchBar extends React.Component {
@@ -758,7 +763,7 @@ class Section2 extends Section {
     constructor(props) {
         super(props);
         this._boxClassName = sentencesBoxClassName;
-        this._endpoint = sentencesEndpoint;
+        this._endpoint = unclusteredSentencesEndpoint;
         this._itemClassName = sentenceClassName;
 
     }
