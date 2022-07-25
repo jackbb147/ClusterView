@@ -32,7 +32,7 @@ class Section extends React.Component {
 
         this.state = {
             displayTemp: false, // if true, display temporary items.
-            managers:[]
+            managers:[new SectionItemManager()]
         }
         this._boxClassName = undefined;
         this._itemClassName = undefined;
@@ -73,6 +73,10 @@ class Section extends React.Component {
         return this.state.filter;
     }
 
+    set filter(newFiler){
+        this.setState({filter: newFiler});
+    }
+
     get manager(){
         return this.state.managers[this.filter?this.filter:0];
     }
@@ -88,21 +92,6 @@ class Section extends React.Component {
     }
     set managers(newManagers){
         this.setState({managers: newManagers})
-    }
-
-
-
-    /**
-     * get the items array from manager.
-     * @param i which manager to use.
-     * @return {*|*[]}
-     */
-    getItemsArr(i){
-        let manager = this.managers[i];
-        let items = manager
-            ? manager.getAllItems()
-            : [];   //TODO: refactor
-        return items;
     }
 
     /**
@@ -239,15 +228,7 @@ class Section1 extends Section {
      */
     _filterDisplay(){
         print("594: filter called");
-        let newFilter = this.state.filter + 1;
-
-        this.setState({
-            filter: newFilter > 2 ? 0 : newFilter,
-            _activeCardIndex: 0
-        })
-
-
-
+        this.filter += 1;
         //TODO
     }
 
@@ -411,15 +392,16 @@ class Section1 extends Section {
         // });
         // //load more, if items is 0
         // print("818: items: ", items);
-        let filter = _.state.filter
-        let items = _.getItemsArr(filter);
+        let filter = _.filter
+        let items = _.manager.getAllItems();
         let manager = _.manager;
         let activeIndex = manager ? manager.getActiveIndex() : -1;
 
         return (
 
             <div className={"row main_section1"}>
-                <SectionHead>
+                <SectionHead
+                    filterCB={this._filterDisplay.bind(this)}>
 
                 </SectionHead>
 
@@ -519,7 +501,7 @@ class Section2 extends Section {
     render(){
         const _ = this;
         // let manager = _.state.itemManagers[0];
-        let items = _.getItemsArr(0);
+        let items = _.manager.getAllItems();
         print("526 Section2: ", _.managers, items);
         return (
             <div className={"row main_section2"}>
