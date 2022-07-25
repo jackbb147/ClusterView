@@ -58,13 +58,26 @@ class Section extends React.Component {
             .then( () => {
                 print("manager initiated!");
 
-                print("99: ", _.state.itemManagers);
+
                 //after initiating, call setState to trigger a re-render.
                 _.setState({
                     itemManagers: [manager]
                 })
             })
 
+    }
+
+    /**
+     * get the items array from manager.
+     * @param i which manager to use.
+     * @return {*|*[]}
+     */
+    getItemsArr(i){
+        let manager = this.state.itemManagers[i];
+        let items = manager
+            ? manager.getAllItems()
+            : [];   //TODO: refactor
+        return items;
     }
 
 
@@ -149,6 +162,9 @@ class Section extends React.Component {
 
 }
 
+/**
+ *
+ */
 class Section1 extends Section {
     /**
      * cards are built from this.state.loadedItems,
@@ -161,7 +177,31 @@ class Section1 extends Section {
         this._boxClassName = clustersBoxClassName;
         this._endpoint = clusterEndpoint;
     }
+    /**
+     *
+     * @return {Promise<Awaited<*>[]>}
+     */
+    async componentDidMount(){
+        const _ = this;
+        let manager = new ClustersManager(
+            _.props.q,
+            sectionEndpoints[_.props.i - 1],
+        );
+        _.setState({
+            itemManagers: [manager]
+        })
+        return manager.initiate()
+            .then( () => {
+                print("manager initiated!");
 
+                print("99: ", _.state.itemManagers);
+                //after initiating, call setState to trigger a re-render.
+                _.setState({
+                    itemManagers: [manager]
+                })
+            })
+
+    }
 
     //
     // /**
@@ -316,10 +356,7 @@ class Section1 extends Section {
 
         return f;
     }
-    /**
-     * //TODO refactor this into Section Class. Same with Section2
-     * @return {JSX.Element}
-     */
+
     render(){
         // print("804: new filter value: ", this.state.filter);
         const _ = this;
@@ -343,7 +380,11 @@ class Section1 extends Section {
         // });
         // //load more, if items is 0
         // print("818: items: ", items);
-
+        let filter = _.state.filter
+        let items = _.getItemsArr(filter);
+        let manager = _.state.itemManagers[filter];
+        let activeIndex = manager ? manager.getActiveIndex() : -1;
+        print("360: items: ", items);
         return (
 
             <div className={"row main_section1"}>
@@ -353,7 +394,20 @@ class Section1 extends Section {
 
                 <SectionBody>
                     <ClusterWrapper>
+                    {items.map((cardInfo, index) => {
 
+                            let {accepted, title, feedbacks, id} = cardInfo,
+                                key = index,
+                                display = index === activeIndex;
+                            return <ClusterCard
+                                                key={key}
+                                                id={id}
+                                                title={title}
+                                                accepted={accepted}
+                                                feedbacks={feedbacks}
+                                                display={display}
+                            />
+                    })}
                     </ClusterWrapper>
                 </SectionBody>
                 {/*<SectionHead*/}
@@ -375,7 +429,7 @@ class Section1 extends Section {
                 {/*                                    accepted={accepted}*/}
 
                 {/*                                    feedbacks={cardInfo.feedbacks}*/}
-                {/*                                    display={index === _.state._activeCardIndex}*/}
+                {/*                                    */}
                 {/*                                    headCB={this._toggleAcceptedStatus()} //the callback function for (un)acceptBtn*/}
                 {/*                                    id={cardInfo.id}*/}
                 {/*                                    index={index}*/}
@@ -414,17 +468,15 @@ class Section2 extends Section {
         return super.componentDidMount().then(() => {
             let manager = _.state.itemManagers[0];
             manager.setActiveIndex(manager.count()-1);
-            print("778: ", manager.getActiveIndex());
+
         })
     }
 
     render(){
         const _ = this;
-        let manager = _.state.itemManagers[0];
-        let items = manager
-            ? manager.getAllItems().map(item => item[0])  // because item is an array of length 1. (See API documentation)
-            : [];   //TODO: refactor
-        print("425: items: ", items);
+        // let manager = _.state.itemManagers[0];
+        let items = _.getItemsArr(0);
+
         return (
             <div className={"row main_section2"}>
                 <SectionHead>
@@ -685,46 +737,29 @@ class ClusterCardBody extends React.Component {
         super(props);
     }
 
-    /**
-     * TODO: a little ugly
-     * (the text format is "text$fbid") seperate
-     * the text and feedbackid. return an array
-     * @return Array [text, ID]
-     */
-    _processText(rawText) {
-        //TODO
-        if(!rawText) return [undefined, undefined];
-        var rawArr = rawText.split('');
-        var index = rawArr.lastIndexOf('$');
-
-        let text = rawArr.splice(0, index);
-        rawArr.shift();
-        let fbID = Number(rawArr.join(''));
-        // print("fbID: ", fbID);
-        return [text.join(''), fbID];
-    }
-
 
     render( ) {
         const _ = this;
+        print("735: ", this.props);
         var i = 0;
         return (
             <div className={"row ClusterCard_body hideScrollBar"}>
                 <div className={"container_fluid ClusterCard_body_container hideScrollBar"}>
                     {
                         this.props.feedbacks.map(fb =>{
-                                let textNid = _._processText(fb);
-                                if(!(textNid[1] === undefined))
+                            return <ClusterCardFeedbackEntry
+                                key={i}
+                                text={fb[0]}
+                                id={fb[1]} //sentenceID
+                                clusterID={this.props.clusterID}
+                                cb={this.props.removeCB}
+                                index={i++}
+                                clusterIndex={this.props.clusterIndex}
+                            />
+                                // let textNid = _._processText(fb);
+                                // if(!(textNid[1] === undefined))
 
-                                    return <ClusterCardFeedbackEntry
-                                        key={i}
-                                        text={textNid[0]}
-                                        id={textNid[1]} //sentenceID
-                                        clusterID={this.props.clusterID}
-                                        cb={this.props.removeCB}
-                                        index={i++}
-                                        clusterIndex={this.props.clusterIndex}
-                                    />
+
                             }
                         )
                     }
@@ -848,7 +883,7 @@ class UnclusteredSentence extends React.Component {
     }
 
     render(){
-        print("848: my text: ", this.props.text);
+
         return (
             <div className={"row unclustered-sentence"}>{this.props.text}</div>
         )

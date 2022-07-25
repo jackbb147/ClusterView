@@ -2,7 +2,7 @@
  * manages a list of items.
  */
 class Store{
-    constructor(queryString){
+    constructor(){
         this.items = [];
     }
 
@@ -111,7 +111,8 @@ class SectionItemManager {
      * get all my items.
      */
     getAllItems(){
-       return this._itemstore.items;
+       let items = this._itemstore.getItems();
+       return items;
     }
 
     getActiveIndex(){
@@ -180,9 +181,14 @@ class SectionItemManager {
      * @param id
      * @param which 0 or 1, which endpoint to use.
      */
-    _idtoQueryString(id, which ){
+    _idtoQueryString(id, which, customEndpoint){
         //TODO
-        return `${this._endpoints[which]}/${id}`;
+        let endpoint = customEndpoint
+            ? customEndpoint
+            : this._endpoints[which];
+        let queryString = `${endpoint}/${id}`;
+
+        return queryString;
     }
 
     /**
@@ -209,7 +215,6 @@ class SectionItemManager {
         let itemsPromise = this.fetchN(n, 1);
 
         return itemsPromise.then( items => {
-            print("166: items: ", items);
           _._itemstore.setItems(items);
         })
     }
@@ -220,11 +225,11 @@ class SectionItemManager {
      * @param i index of item ID
      * @return {Promise<void>}
      */
-    async fetchOne(i, which=0){
+    async fetchOne(i, which=0, customEndpoint=undefined){
         const _ = this;
-        let endpoint = _._endpoints[which];
+
         let id = _._itemIDstore.get(i).id;
-        let queryString = _._idtoQueryString(id, which);
+        let queryString = _._idtoQueryString(id, which, customEndpoint);
         return _._q(queryString);
     }
 
@@ -234,12 +239,12 @@ class SectionItemManager {
      * @param n: how many to fetch.
      * @return {Promise<Awaited<unknown>[]>}
      */
-    async fetchN(n, which){
+    async fetchN(n, which, customEndpoint){
         const _ = this;
 
         let promises = [];
         for(let i = 0; i < n; i++)
-            promises.push(_.fetchOne(i, which));
+            promises.push(_.fetchOne(i, which, customEndpoint));
 
         return Promise.all(promises);
     }
@@ -264,6 +269,84 @@ class ClustersManager extends SectionItemManager {
         super(...args);
 
     }
+
+    /**
+     * fetch one item (whose ID is at index i of ID store) from the API
+     * the API returns in the following format: "text$1234" where 1234 is the feedback ID.
+     * @param which: 0 or 1. Which endpoint to use. e.g. /cluster/46904 is not the same as /clusterfeedbacks/46904
+     * @param i index of item ID
+     * @return {Promise<void>}
+     */
+    // async fetchOne(i, which=0){
+    //     const _ = this;
+    //     let endpoint = _._endpoints[which];
+    //     let id = _._itemIDstore.get(i).id;
+    //     let queryString = _._idtoQueryString(id, which);
+    //     return _._q(queryString);
+    // }
+
+
+    /**
+     * stock up the item store by fetching all items.
+     * @return {Promise<Awaited<*>[]>}
+     */
+    async _initiateItemStore(n= 10){
+        const _ = this;
+        let clustersPromise = this.fetchN(n, 0, "cluster");
+        let feedbacksPromise = this.fetchN(n, 1);
+        return Promise.all([clustersPromise, feedbacksPromise])
+            .then(values => {
+            let items = [];
+            let count = values[0].length;
+            for(let i = 0; i < count; i++){
+                let cluster = values[0][i][0],
+                    feedbacks = this._processFB(values[1][i].filter(fb => fb)); //because some feedbacks are null.
+
+                if(!cluster ) continue;
+                print("305: cluster: ", cluster, "feedbacks: ", feedbacks)
+                let item = {
+                    title: cluster.title,
+                    feedbacks: feedbacks,
+                    accepted: cluster.accepted,
+                    id: cluster.id
+                }
+                print("311: item: ", item);
+                items.push(item);
+            }
+
+            _._itemstore.setItems(items);
+            print("317: items: ", items);
+            print("318: my item store: ", _._itemstore.getItems());
+
+        })
+
+    }
+
+
+    /**
+     * TODO: a little ugly
+     * (the text format is "text$fbid") seperate
+     * the text and feedbackid. return an array
+     * @return Array [text, ID]
+     */
+    _processFB(rawFB) {
+        //TODO
+        print("334 rawtext: ", rawFB)
+        return rawFB.map(rawText => {
+            if(!rawText) return [undefined, undefined];
+            var rawArr = rawText.split('');
+            var index = rawArr.lastIndexOf('$');
+
+            let text = rawArr.splice(0, index);
+            rawArr.shift();
+            let fbID = Number(rawArr.join(''));
+            // print("fbID: ", fbID);
+            return [text.join(''), fbID];
+        })
+
+    }
+
+
 
 
 
