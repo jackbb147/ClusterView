@@ -69,7 +69,6 @@ class Section extends React.Component {
 
 
 
-
     get filter(){
         return this.state.filter;
     }
@@ -93,8 +92,6 @@ class Section extends React.Component {
 
 
 
-
-
     /**
      * get the items array from manager.
      * @param i which manager to use.
@@ -107,8 +104,6 @@ class Section extends React.Component {
             : [];   //TODO: refactor
         return items;
     }
-
-
 
     /**
      * returns a callback function that can be passed down
@@ -125,8 +120,9 @@ class Section extends React.Component {
             const el = document.querySelector(classname);
 
             if(el.scrollTop  + el.clientHeight >= 0.8 * el.scrollHeight){
-                // print("App.js 168: bottom reached!", _._loadItems);
-                _._loadItems();
+                print("App.js 123: bottom reached!");
+                _.manager.incrementIndex();
+                _.manager = _.manager; //THIS SETTER WILL TRIGGER A RERENDER.
             }
 
         }
@@ -428,7 +424,8 @@ class Section1 extends Section {
                 <SectionBody>
                     <ClusterWrapper
                         rightBtnClick={_.onRightClick()}
-                        leftBtnClick={_.onLeftClick()}>
+                        leftBtnClick={_.onLeftClick()}
+                        scrollcb={_._handleScroll()}>
                     {items.map((cardInfo, index) => {
 
                             let {accepted, title, feedbacks, id} = cardInfo,
@@ -503,7 +500,7 @@ class Section2 extends Section {
             _.props.q,
             sectionEndpoints[_.props.i - 1],
         );
-        return manager.initiate()
+        return manager.initiate(20)
             .then( () => {
                 manager.setActiveIndex(manager.count()-1);
                 //after initiating, call setState to trigger a re-render.
@@ -527,7 +524,7 @@ class Section2 extends Section {
                 <SectionHead>
                 </SectionHead>
                 <SectionBody>
-                    <UnclusteredSentencesWrapper>
+                    <UnclusteredSentencesWrapper cb={(_._handleScroll)()}>
                     {items.map((sentence, index) =>
                         <UnclusteredSentence
                             key={index}

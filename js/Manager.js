@@ -39,14 +39,14 @@ class SectionItemManager {
      * @return {Promise<Awaited<*>[]>}
      * @private
      */
-    async initiate(){
+    async initiate(n){
         const _ = this;
         print("SectionItemManager: 86: ", _);
         let queryString = `${_._endpoints[0]}` //TODO
 
         if(this._filter) queryString += `/${this._filter};`
         return _._initiateIDStore(queryString)
-            .then(() => _._initiateItemStore());
+            .then(() => _._initiateItemStore(n));
     }
 
     /**
@@ -98,13 +98,14 @@ class SectionItemManager {
         if(this._activeindex + n < count) this._activeindex+=n;
         else {
             print("Store.js 140: incrementIndex called. Out of bounds. ")
-
-            let newItemPromises = _._prepItems(5, _.count());
-            newItemPromises.then(items => {
-                print("103: ", items);
-                _.stockUp(items);
-                print("finished stocking up: ", _.getAllItems());
-            })
+            if(_.count() < _._itemIDstore.count()){
+                let newItemPromises = _._prepItems(5, _.count());
+                newItemPromises.then(items => {
+                    print("103: ", items);
+                    _.stockUp(items);
+                    print("finished stocking up: ", _.getAllItems());
+                })
+            }
         }
     }
 
@@ -219,8 +220,9 @@ class SectionItemManager {
      */
     async fetchOne(i, which=0, customEndpoint=undefined){
         const _ = this;
-
-        let id = _._itemIDstore.get(i).id;
+        let IDObject = _._itemIDstore.get(i);
+        if(!IDObject) return;
+        let id = IDObject.id;
         let queryString = _._idtoQueryString(id, which, customEndpoint);
         print("225: ", id, queryString, customEndpoint);
         return _._q(queryString);
@@ -348,7 +350,7 @@ class SentencesManager extends SectionItemManager {
     async _prepItems(n, starting=0){
         print("section 2 prep called!");
         const _ = this;
-        let itemPromises = _.fetchN(n,1, starting);
+        let itemPromises = _.fetchN(n,1, undefined,starting);
         return itemPromises.then(items => items.map(item => item[0]));
     }
 
