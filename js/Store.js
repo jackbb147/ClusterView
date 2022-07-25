@@ -128,12 +128,13 @@ class SectionItemManager {
     }
 
     incrementIndex(n=1){
-        let count = _._itemstore.count();
+
+        let count = this._itemstore.count();
         if(this._activeindex + n < count) this._activeindex+=n;
     }
 
-    decrementCount(n=1){
-        let count = _._itemstore.count();
+    decrementIndex(n=1){
+        let count = this._itemstore.count();
         if(this._activeindex - n >= 0) this._activeindex-=n;
     }
 

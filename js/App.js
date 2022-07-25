@@ -232,22 +232,56 @@ class Section1 extends Section {
         //TODO
     }
 
-    onRightBtnClick(){
-        var items = this.state.displayTemp ? this.state.tempItems : this.state.loadedItems;
-        var currentindex = this.state._activeCardIndex;
-        if(currentindex + 1 < items.length) this._incrementIndex();
-        print("App.js 278: ", this.state._activeCardIndex);
-        if(!this.state.displayTemp && (items.length - this.state._activeCardIndex) < 4){
-            print("278: loading more cards. ")
-            this._loadItems()
-        }
+    get filter(){
+        return this.state.filter;
     }
 
-    onLeftBtnClick(){
+    get manager(){
+        return this.state.itemManagers[this.filter];
+    }
 
-        var currentindex = this.state._activeCardIndex;
-        if(currentindex > 0) this._decrementIndex();
-        print(this.state._activeCardIndex)
+    get managers(){
+        return this.state.itemManagers;
+    }
+
+    set manager(newManager){
+        print("App.js 248: setter called: ", newManager);
+        let managers = this.managers;
+        managers[this.filter] = newManager;
+        this.setState({
+            managers: managers
+        })
+    }
+
+
+    /**
+     *
+     * @param direction 1 for right, -1 for left
+     * @return {f}
+     */
+
+    onRightClick(){
+        const _ = this;
+
+        function f(){
+            let manager = _.manager;
+            manager.incrementIndex();
+            _.manager = manager;    //set state, to trigger re-render
+        }
+
+        return f;
+    }
+
+    onLeftClick(){
+        const _ = this;
+
+        function f(){
+            let manager = _.manager;
+            manager.decrementIndex();
+            _.manager = manager;
+        }
+
+        return f;
     }
 
     /**
@@ -393,7 +427,9 @@ class Section1 extends Section {
                 </SectionHead>
 
                 <SectionBody>
-                    <ClusterWrapper>
+                    <ClusterWrapper
+                        rightBtnClick={_.onRightClick()}
+                        leftBtnClick={_.onLeftClick()}>
                     {items.map((cardInfo, index) => {
 
                             let {accepted, title, feedbacks, id} = cardInfo,
@@ -541,7 +577,7 @@ class App extends React.Component {
     }
 }
 
-const PRODUCTION = true;
+const PRODUCTION = false;
 async function q(endpoint, params={}){
     var link = PRODUCTION ? "https://clusterjack.herokuapp.com/api" : "http://localhost:1700/api";
     return fetch(`${link}/${endpoint}`, params)
