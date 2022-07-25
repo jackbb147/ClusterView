@@ -34,6 +34,17 @@ class SectionItemManager {
     }
 
 
+    set filter(newFilter){
+        //TODO
+        this._filter = newFilter;
+    }
+
+    get filter(){
+        return this._filter;
+    }
+
+
+
     /**
      * call this to initiate the item manager.
      * @return {Promise<Awaited<*>[]>}
@@ -59,6 +70,7 @@ class SectionItemManager {
 
 
 
+
     /**
      * get the item at index i.
      * @param i if i is -1, get ALL.
@@ -80,7 +92,11 @@ class SectionItemManager {
         return this._activeindex;
     }
 
-    setActiveIndex(i){
+    get activeIndex(){
+        return this._activeindex;
+    }
+
+    set activeIndex(i){
         if(!this._itemstore.isValidIndex(i)){
             print(i+" is not a valid index. ");
             return;

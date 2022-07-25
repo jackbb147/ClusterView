@@ -229,6 +229,7 @@ class Section1 extends Section {
     _filterDisplay(){
         print("594: filter called");
         this.filter += 1;
+        this.manager.filter = this.filter;
         //TODO
     }
 
@@ -395,7 +396,7 @@ class Section1 extends Section {
         let filter = _.filter
         let items = _.manager.getAllItems();
         let manager = _.manager;
-        let activeIndex = manager ? manager.getActiveIndex() : -1;
+        let activeIndex = manager ? manager.activeIndex : -1;
 
         return (
 
@@ -486,7 +487,7 @@ class Section2 extends Section {
         );
         return manager.initiate(20)
             .then( () => {
-                manager.setActiveIndex(manager.count()-1);
+                manager.activeIndex = manager.count()-1;
                 //after initiating, call setState to trigger a re-render.
                 _.managers = [manager];
             })
