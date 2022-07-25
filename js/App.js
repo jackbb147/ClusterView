@@ -73,8 +73,8 @@ class Section extends React.Component {
             tempItems: [], //temporary item storage (for search results, for example.)
             displayTemp: false // if true, display temporary items.
         }
-        this._idStore = undefined;
-        this._loadedStore = undefined;
+        this._store = undefined;
+        this._tempStore = undefined;
         this._boxClassName = undefined;
         this._itemClassName = undefined;
         this._title = undefined;
@@ -101,8 +101,9 @@ class Section extends React.Component {
 
 
 
-    /**INITIATE A CLUSTER STORE AND RETURN IT
-     * check the API documentation for the format of each item.
+    /**
+     * INITIATE A STORE AND RETURN IT
+     *  check the API documentation for the format of each item.
      *  @param filter: optional filter for loading item IDs.
      */
     async _initiateStore(filter){
@@ -112,6 +113,8 @@ class Section extends React.Component {
             return new Store(arr);
         })
     }
+
+
 
     /**
      *
@@ -144,7 +147,7 @@ class Section extends React.Component {
     async _loadItems(n=5, recurse=false, from, to){
         const _ = this;
         if(_._gettingSome) return; // do not get some when we are still getting some.
-        if(from === undefined) from = this._idStore;
+        if(from === undefined) from = this._store;
 
         _._gettingSome = true;
         const bunch = from.getSome(n);
@@ -642,7 +645,7 @@ class Section1 extends Section {
         print("I(SECTION1) MOUNTED!");
         _._initiateStore()
             .then(store => {
-                _._idStore = store;
+                _._store = store;
                 _._loadItems(5)
             })
     }
@@ -943,7 +946,7 @@ class Section2 extends Section {
         print("I(SECTION2) MOUNTED!");
         _._initiateStore()
             .then(store => {
-                _._idStore = store;
+                _._store = store;
                 print("section 2: ", store.getAll());
                 _._loadItems(10, false);
 

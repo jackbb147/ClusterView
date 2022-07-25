@@ -1,102 +1,228 @@
 /**
- * Manages a list of items.
+ * manages a list of items.
  */
 class Store{
-    /**
-     *
-     * @param arr Array
-     */
-    constructor(arr) {
+    constructor(q, queryString){
+        this.q = q;
+        this.queryString = queryString;
+        this.items = [];
+    }
+
+    setItems(arr){
         this.items = arr;
     }
 
     /**
-     * count how many items there are in the store.
-     * @return Number
+     * swap the i-th item with the given newItem.
+     * @param i index.
+     * @param newItem
      */
+    swap(i, newItem){
+        //TODO
+        if(!this.isValidIndex(i)) return;
+        this.items[i] = newItem;
+    }
+
+    isValidIndex(i){
+        //TOOD
+        return (i + 1 < this.items.length && 0 <= i)
+    }
+
+    getItems(){
+        return this.items;
+    }
+
     count(){
         return this.items.length;
     }
 
-
-    add(...newItems){
-        (this.items).push(...newItems);
+    get(i){
+        return this.items[i];
     }
 
-    remove(identifier){
+    remove(i){
         //TODO
+        if(!this.isValidIndex(i)) return;
+        this.items.splice(i, 1);
     }
 
-    getAll(){
-        return this.items;
+}
+
+/**
+ * stores a list, where each item in the list is
+ * the information needed to build that item for view.
+ * TWO TYPES OF THINGS STORED:
+ *      item id: e.g. cluster/46904, sentence/12389
+ *      item: the actual item.
+ *
+ * Section1 has a(or multiple, for filtering) ClustersManager(s),
+ * Section2 has a Sentences manager.
+ */
+class SectionItemManager {
+    /**
+     *
+     * @param q :
+     */
+    constructor(q, endpoint ) {
+        this._itemstore = new Store();
+        this._endpoint = endpoint; //e.g "/cluster/", or "/sentence"
+        this._itemIDstore = new Store()
+        this._q = q;
     }
 
     /**
-     * get n items out of the store, (optionally)skipping a few.
-     *
-     * @param n if -1, get all.
-     * @param skip how many to skip
+     * call this to initiate the item manager.
+     * @return {Promise<Awaited<*>[]>}
+     * @private
      */
-    getSome(n, skip){
-        print("GET SOME() CALLED, STORE", this.items);
-        if(n < 0) return this.getAll()
-        if(this.count() < 1) return [];
-        if(skip === undefined) skip = 0;
-        var ans = [];
-        for(var i = 0; i < n && (i + skip) < this.count(); i++) ans.push(this.items.shift());
-        return ans;
+    async initiate(){
+        const _ = this;
+
+        return _._initiateIDStore()
+            .then(() => _._initiateItemStore());
+    }
+
+    /**
+     * get the item at index i.
+     * @param i if i is -1, get ALL.
+     */
+    get(i=-1){
+        //TODO
+        return i === -1 ? this._itemstore.getItems() || this._itemstore.get(i);
+    }
+
+
+    /**
+     * remove the item at index i.
+     * @param i
+     * @param hard: Boolean. if hard, the length of itemstore will also change.
+     */
+    remove(i, hard = false){
+        //TODO
+        if(hard)
+            this._itemstore.remove(i);
+        else
+            this._itemstore.swap(i, undefined);
+    }
+
+    /**
+     * swap the item at index i with a new item.
+     * @param i
+     * @param newItem
+     */
+    swap(i, newItem){
+        //TODO
+        this._itemstore.swap(i, newItem);
+    }
+
+    /**
+     * update the item at index i.
+     * @param i
+     */
+    update(i){
+        //TODO
+        const _ = this;
+        _.fetchOne(i)
+            .then(newItem => {
+                _._itemstore.swap(i, newItem);
+            })
+    }
+
+    /**
+     * turn an id into a queryable string. e.g. 46905 -> /cluster/46905
+     * @param id
+     */
+    _idtoQueryString(id){
+        //TODO
+        return `${this._endpoint}/${id}`;
+    }
+
+    /**
+     * stock up the ID store.
+     * @param queryString: e.g. /clusters/, or /unclusteredsentences
+     * @return {Promise<void>}
+     */
+    async _initiateIDStore(queryString){
+        //TODO
+        const _  = this;
+        return _._q(queryString)
+            .then(arr => {
+                _._itemIDstore.setItems(arr);
+            })
+    }
+
+    /**
+     * stock up the item store by fetching all items.
+     * @return {Promise<Awaited<*>[]>}
+     */
+    async _initiateItemStore(){
+        const _ = this;
+        let itemsPromise = this.fetchAll();
+
+        return itemsPromise.then( items => {
+          _._itemstore.setItems(items);
+        })
+    }
+
+    /**
+     * fetch one item (whose ID is at index i of ID store) from the API
+     * @return {Promise<void>}
+     */
+    async fetchOne(i){
+        const _ = this;
+        let id = _._itemIDstore.get(i);
+        return _._q(_._idtoQueryString(id));
+    }
+
+
+    /**
+     * fetch all items(i.e all IDs in ID store) from the API.
+     * @return {Promise<Awaited<unknown>[]>}
+     */
+    async fetchAll() {
+        const _ = this;
+        var count = _._itemIDstore.count();
+
+        let promises = [];
+        for(let i = 0; i < count; i++)
+            promises.push(_.fetchOne(i));
+
+        return Promise.all(promises);
     }
 }
 
 /**
- * just like store, but keeps track of an index property, and can LOAD from API.
+ * A "CLUSTER" ITEM is defined as ONE cluster ID, AND a LIST of associated feedback entries.
  */
-class SuperStore extends Store{
-    /**
-     *
-     * @param arr
-     * @param q query function
-     */
-    constructor(arr, q) {
-        super(arr);
-        this._q = q;
-        this._activeIndex = 0;
-        this._loadedItems = [];
-    }
-
-    incrementIndex(){
-        //TODO
-        var i = this._activeIndex;
-        if((i+1) < this.length()) this._activeIndex++;
-    }
-
-    decrementIndex(){
-        //TODO
-        var i = this._activeIndex;
-        if(i > 1) this._activeIndex--;
+class ClustersManager extends SectionItemManager {
+    constructor(...args) {
+        super(...args);
+        this._activeindex = 0;
     }
 
     getActiveIndex(){
-        return this._activeIndex;
+        return this._activeindex;
     }
 
-    /**
-     * load one item .
-     */
-    loadItem(){
-
+    incrementIndex(){
+        let count = _._itemstore.count();
+        if(this._activeindex + 1 < count) this._activeindex++;
     }
 
-    /**
-     * load a bunch of items.
-     */
-    loadItems(){
-
+    decrementCount(){
+        let count = _._itemstore.count();
+        if(this._activeindex - 1 >= 0) this._activeindex--;
     }
-
-    getLoadedItems(){
-        return this._loadedItems;
-    }
-
 
 }
+
+/**
+ * A "SENTENCE" ITEM is defined as an unclusterd sentence.
+ */
+class SentencesManager extends SectionItemManager {
+    constructor(...args) {
+        super(...args);
+    }
+
+}
+
