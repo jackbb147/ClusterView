@@ -35,6 +35,14 @@ class SectionItemManager {
         this._gettingsome = false;  //is a query pending?
     }
 
+    get idstore(){
+        return this._itemIDstore;
+    }
+
+    get itemstore(){
+        return this._itemstore;
+    }
+
     get gettingsome(){
         return this._gettingsome;
     }
@@ -379,7 +387,6 @@ class SectionItemManager {
         return itemsPromise.then( items => _._itemstore.setItems(items));
     }
 
-
     /**
      * fetch one item (whose ID is at index i of ID store) from the API
      * @param which: 0 or 1. Which endpoint to use. e.g. /cluster/46904 is not the same as /clusterfeedbacks/46904
@@ -521,6 +528,42 @@ class SentencesManager extends SectionItemManager {
         return itemPromises.then(items => items.map(item => item[0]));
     }
 
+    /**
+     * fetch one ID object, then load that into item id store.
+     * NOTE that both the ID and item store MUST be updated,
+     * to keep the alignment. To update the item store, manually
+     * call after ID is loaded.
+     * @param ID
+     * @param toEnd Boolean. If true, append new stuff to end, (else to the front)
+     * @param customEndpoint
+     * @return {Promise<void>}
+     */
+    async fetchOneID(ID, customEndpoint, toEnd=true){
+        const _ = this;
+        let queryString = customEndpoint
+            ? customEndpoint
+            : "sentence";
+        queryString += ("/"+ID);
+        P("FETCHING ONE SENTENCE ID: ", queryString);
+        return _._q(queryString)
+                .then(obj => {
+                    obj = obj[0].id;
+                    print2("OBJ: ", obj);
+                    if(toEnd)
+                        _._itemIDstore.append([obj]);
+                    return _;
+                })
+    }
+
+
 }
+
+/**
+ * return _._prepItems(1, _._itemIDstore.count()-1)
+ *                         .then(items => {
+ *                             _._itemstore.append(items);
+ *                             return _;
+ *                         })
+ */
 
 // test_isValid(new SectionItemManager()._isValidIndex)

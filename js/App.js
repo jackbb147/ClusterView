@@ -359,10 +359,11 @@ class Section1 extends Section {
             _.manager.update(cardIndex,
                 "removesentence",
                 clusterID,
-                sentenceID 
+                sentenceID
             )
                 .then (newManager => {
                     _.manager = newManager;
+                    _.props.cb(sentenceID);
                 })
             // //send a remove query to the API
             // var v = true;
@@ -529,11 +530,35 @@ class Section2 extends Section {
     //TODO active index should always be at the end,
     // SO that when triggering a loadMore, ...
 
+    async processRemovedSentences(){
+        const _ = this;
+        if(!_.props.removedSentences.isEmpty()){
+            // pop and load.
+            let ids = _.props.removedSentences.getItems();
+            let promises = ids.map( id =>
+                //TODO
+                _.manager.fetchOneID(id)
+                    .then(newManager => {
+                        print2(newManager.idstore.last);
+                        print2(newManager.idstore);
+                    })
+            )
+            return Promise.all(promises);
+        }
+
+    }
 
 
     render(){
         const _ = this;
-        // let manager = _.state.itemManagers[0];
+        if(!_.props.removedSentences.isEmpty())
+        {
+            _.processRemovedSentences().then( val => {
+                P("555!");
+                _.props.cb();
+            })
+        }
+
         let items = _.manager.getAllItems();
 
         return (
@@ -570,6 +595,19 @@ class App extends React.Component {
      */
     constructor(props) {
         super(props);
+        this.state = {
+            _removedSentences : new Store()
+        }
+    }
+
+    get removedSentences(){
+        return this.state._removedSentences;
+    }
+
+    set removedSentences(newObj){
+        this.setState({
+            _removedSentences: newObj
+        })
     }
 
     /**
@@ -589,12 +627,46 @@ class App extends React.Component {
         print("997: handleSentenceClick called: ", sentenceID)
     }
 
+    /**
+     * on removing a sentence, the removed ID should
+     * be reported to App class, so that
+     * section 2 can trigger a new fetch for the
+     * newly unclustered sentence.
+     * @private
+     */
+    _handleSentenceRemove1(){
+        const _ = this;
+
+        function f(removedSentenceID){
+            P("602: F CALLED, with ", removedSentenceID);
+            _.removedSentences.append([removedSentenceID]);
+            print2("removed sentences: ", _.removedSentences);
+            _.removedSentences = _.removedSentences; //to trigger a re-render.
+        }
+
+        return f;
+    }
+
+    _handleSentenceRemove2(){
+        const _ = this;
+        function f(){
+            P("======= =====648 f called! HANDLING REMOVE ");
+            _.removedSentences.clear();
+            _.removedSentences = _.removedSentences; // to trigger a rerender.
+        }
+
+        return f;
+    }
 
     render() {
         return   (
             <div className={"container main"}>
-                <Section1 i={1} q={this.props.q}></Section1>
-                <Section2 i={2} q={this.props.q}></Section2>
+                <Section1 i={1} q={this.props.q}
+                          cb={this._handleSentenceRemove1()}/>
+                <Section2 i={2}
+                          q={this.props.q}
+                          cb={this._handleSentenceRemove2()}
+                          removedSentences={this.removedSentences}/>
             </div>
         )
     }

@@ -11,13 +11,21 @@ class Store{
      * @param arr new items.
      */
     append(arr){
-        // console.trace();
-        // print("append called: ", arr);
+        print2("appendding the following into store: ", arr);
+
         this.items.push(...arr);
+    }
+
+    get last(){
+        return this.items[this.items.length-1];
     }
 
     setItems(arr){
         this.items = arr;
+    }
+
+    clear(){
+        this.items = [];
     }
 
     /**
@@ -55,5 +63,8 @@ class Store{
         this.items.splice(i, 1);
     }
 
+    isEmpty(){
+        return this.items.length < 1;
+    }
 }
 
