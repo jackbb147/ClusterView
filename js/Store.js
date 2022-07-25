@@ -27,6 +27,7 @@ class Store{
      */
     swap(i, newItem){
         //TODO
+        print2("NEW ITEM: ", newItem)
         if(!this.isValidIndex(i)) return;
         this.items[i] = newItem;
     }

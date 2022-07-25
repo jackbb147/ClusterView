@@ -304,7 +304,12 @@ class Section1 extends Section {
          * @param index the index of this cluster, in the currently displayed items array.
          */
         function toggler(accepted, id, index=undefined){
-            P("app.js 597, ", accepted, id, index);
+
+            _.manager.update(index, accepted ? "unacceptcluster" : "acceptcluster")
+                .then(newManager => {
+                    print2(newManager);
+                    _.manager = newManager
+                })
             //
             // //TODO send request to API
             // let queryString = accepted ? "unacceptcluster/" : "acceptcluster/";
@@ -435,7 +440,6 @@ class Section1 extends Section {
                         rightBtnClick={_.onRightClick()}
                         leftBtnClick={_.onLeftClick()}
                         scrollcb={_._handleScroll()}
-
                     >
                     {items.map((cardInfo, index) => {
 

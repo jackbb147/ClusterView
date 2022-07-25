@@ -202,47 +202,7 @@ class SectionItemManager {
 
     }
 
-    /**
-     * reminder to restock
-     * @param desiredIndex
-     * @return {Promise<void>}
-     */
-    // async replenishReminder(desiredIndex){
-    //     print2("replenish reminder received: ", desiredIndex);
-        // if(newIndex < 0) return;
 
-        // if(_._isValidIndex(newIndex)) {
-        //     // print2("is valid index: ", newIndex);
-        //     if(newIndex === _.activeIndex)
-        //         print2("139. same. ")
-        //     this._activeindex = newIndex
-        //
-        // }
-        // else {
-        //     let forward = Boolean(newIndex >= this.activeIndex);
-        //     let increment =  forward ? 1 : -1;
-        //     let nearest = _._nearestNeighbor(increment);
-        //
-        //
-        //     if(
-        //         (forward && _.activeIndex === nearest) ||
-        //         forward
-        //         && _.needsome
-        //         && _.count() < _._itemIDstore.count()
-        //         && !_.gettingsome
-        //     ){
-        //         _.gettingsome = true;
-        //         _._replenishInventory().then(()=>{
-        //             _.gettingsome=false
-        //             print("171: ", _.gettingsome);
-        //             _.activeIndex++;
-        //         });
-        //     }
-        //     else{
-        //         _.activeIndex = nearest;
-        //     }
-        // }
-    // }
 
     /**
      * fetch more items, then append to items list.
@@ -282,9 +242,6 @@ class SectionItemManager {
     count(){
         return this._itemstore.count();
     }
-
-
-
 
     /**
      * get the item at index i.
@@ -347,15 +304,35 @@ class SectionItemManager {
 
     /**
      * update the item at index i.
+     * @param customEndpoint
+     * @param customTails additional fields to append to the query string( after customEndpoint)
      * @param i
      */
-    update(i){
+    update(i, customEndpoint, ...customTails){
         //TODO
-        const _ = this;
-        _.fetchOne(i)
-            .then(newItem => {
-                _._itemstore.swap(i, newItem);
-            })
+        const _ = this,
+            id = this._itemIDstore.get(i);
+        let queryString = customEndpoint
+            ? customEndpoint
+            : "cluster";
+
+        if(customTails.length < 1)
+            queryString += ("/" + id.id);
+        else
+            customTails.map(tail => queryString += `/${tail}`)
+        return _._q(queryString)
+            .then(val => _._prepItems(1, i)
+                                .then(obj => {
+                                    print2("OBJ: ", obj)
+                                    _._itemstore.swap(i, obj[0]);
+                                    return _;
+                                })
+            )
+
+        // return _.fetchOne(i, customEndpoint)
+        //     .then(newItem => {
+        //         _._itemstore.swap(i, newItem);
+        //     })
     }
 
     /**
@@ -454,6 +431,7 @@ class ClustersManager extends SectionItemManager {
 
     /**
      * fetch from API, then prep the fetched information into "items".
+     * @param n: how many to fetch.
      * @return the Promise of an array of prepped "items" that can be stored in items store.
 
      * @private
