@@ -75,6 +75,12 @@ class Section extends React.Component {
 
 
 
+    get items(){
+        return this.manager
+            ? this.manager.getAllItems()
+            : [];
+    }
+
     get filter(){
         return this._filter;
     }
@@ -89,18 +95,29 @@ class Section extends React.Component {
         this._filter = newFiler;
     }
 
+
+    get whichManager(){
+        return this.state._managerIndex;
+    }
+
+    set whichManager(newIndex){
+        if(newIndex > this.managers.length || newIndex < 0) return;
+        this.setState({_managerIndex: newIndex})
+    }
+
     //TODO
     get manager(){
-        return this.state.managers[this.state._managerIndex];
+        return this.state.managers[this.whichManager];
     }
 
     set manager(newManager){
         let managers = this.managers;
-        managers[this.filter?this.filter:0] = newManager;
+        managers[this.whichManager] = newManager;
         this.managers = managers;
     }
 
     get managers(){
+        print2("120: ", this.state);
         return this.state.managers;
     }
     set managers(newManagers){
@@ -132,58 +149,97 @@ class Section extends React.Component {
         return f
     }
 
+    /**
+     * generate a new manager, and append it
+     * to this.managers[]
+     * @return a new manager object.
+     */
+    getNewManager(q, endpoints, filter=0){
+
+    }
+
 
     /**
      * TODO event handler for undoing the result of onSearch()
      */
     onClear(){
-
-        print("145: onClear called");
-
-        this._displayLoadedItems();
-
+        P("YOU CLEARED!");
+        let managers = this.managers
+        print2("managers: ", managers);
+        managers.pop();
+        this.managers = managers;
+        this.whichManager--;
     }
 
     /**
      * event handler for the search button.
      */
-    onSearch(){
+    async onSearch(){
 
-        // clear out the temp items array, before loading it.
-        this.setState({
-            tempItems: []
-        });
-        print("App.js 36", this , this.props.i);
+        const _ = this;
         //TODO print the inputted text
         var field = document.querySelector(`.${searchBarClassName}-${this.props.i} > .${searchBarClassName}_input > input`);
-        print("app.js 69: ", field.value);
-        //TODO print the query function
-        print("app.js 71: ", this.props.q);
-        //TODO do a query, but use the inputted text as a filter.
-        var prom = this._initiateStore(field.value);
-        prom.then(store => {
-            print("app.js 113: ", store);
+        let input = field.value;
+        P("YOU SEARCHED!" + field.value);
+        //TODO get a NEW MANAGER, append it to managers[], and switch to that one
+        let unfilteredEndpoints = sectionEndpoints[_.props.i -1];
+        let endpoint0 = unfilteredEndpoints[0] + "/" + input,
+            endpoint1 = unfilteredEndpoints[1];
+        let manager = _.getNewManager(
+            _.props.q,
+            [endpoint0, endpoint1]
+        );
+        print2("manager: ", manager);
+        let managers = _.managers;
 
-            //TODO print the load method
-            print("app.js 86: ", this._loadItems);
-            //TODO load the fetched items to some array.
-            this._loadItems(-1,
-                false,
-                store,
-                this.state.tempItems)
-                .then(val => {
-                    this.setState(this.state);
-                    //TODO print the box
-                    print("app.js 158: ", this._boxClassName );
+        return manager.initiate()
+            .then(() => {
+                // print2("189: managers: ", managers);
+                P("196: initated: ", manager);
+                managers.push(manager);
+                _.managers = managers;
+                _.whichManager = _.managers.length-1;
+                print2("new manager: ", manager);
 
-                    //TODO print the loaded temporary items.
-                    print("app.js 160: ", this.state.tempItems);
-                    //TODO hide current items
-                    this._displayTempItems();
-                    //TODO load the temporary items into view.
+                //TODO: load, with custom endpoint and filter
+            })
 
-                })
-        })
+        //
+
+
+        // // clear out the temp items array, before loading it.
+        // this.setState({
+        //     tempItems: []
+        // });
+        // print("App.js 36", this , this.props.i);
+
+        // //TODO print the query function
+        // print("app.js 71: ", this.props.q);
+        // //TODO do a query, but use the inputted text as a filter.
+        // var prom = this._initiateStore(field.value);
+        // prom.then(store => {
+        //     print("app.js 113: ", store);
+        //
+        //     //TODO print the load method
+        //     print("app.js 86: ", this._loadItems);
+        //     //TODO load the fetched items to some array.
+        //     this._loadItems(-1,
+        //         false,
+        //         store,
+        //         this.state.tempItems)
+        //         .then(val => {
+        //             this.setState(this.state);
+        //             //TODO print the box
+        //             print("app.js 158: ", this._boxClassName );
+        //
+        //             //TODO print the loaded temporary items.
+        //             print("app.js 160: ", this.state.tempItems);
+        //             //TODO hide current items
+        //             this._displayTempItems();
+        //             //TODO load the temporary items into view.
+        //
+        //         })
+        // })
     }
 
 }
@@ -234,6 +290,30 @@ class Section1 extends Section {
     //
     // }
 
+
+    /**
+     * generate a new manager,
+     * @return a new manager object.
+     */
+    getNewManager(q, endpoints, filter=0){
+    //TODO
+        let manager = new ClustersManager(q, endpoints, filter);
+        return manager;
+    }
+
+
+
+
+    get title(){
+        switch (this.filter){
+            case 0:
+                return "All Clusters";
+            case 1:
+                return "Accepted Clusters";
+            case 2:
+                return "Unaccepted Clusters";
+        }
+    }
     /**
      * toggles the filter between the three modes.
      * @private
@@ -420,9 +500,8 @@ class Section1 extends Section {
         //         (!filter.displayAccepted && !child.accepted))
         // });
         // //load more, if items is 0
-        // print("818: items: ", items);
         let filter = _.filter
-        let items = _.manager.getAllItems();
+        let items = _.items;
         let manager = _.manager;
         let activeIndex = manager ? manager.activeIndex : -1;
 
@@ -431,9 +510,11 @@ class Section1 extends Section {
             <div className={"row main_section1"}>
                 <SectionHead
                     filterCB={this._filterDisplay.bind(this)}
-
+                    cb={this.onSearch.bind(this)}   //search
+                    cbClear={this.onClear.bind(this)}   //clear search
+                    i={1}
+                    title={this.title}
                 >
-
                 </SectionHead>
 
                 <SectionBody>
@@ -460,12 +541,6 @@ class Section1 extends Section {
                     })}
                     </ClusterWrapper>
                 </SectionBody>
-                {/*<SectionHead*/}
-                {/*    filterCB={this._filterDisplay.bind(this)}*/}
-                {/*    i={1}*/}
-                {/*    cb={this.onSearch.bind(this)}*/}
-                {/*    cbClear={this.onClear.bind(this)}*/}
-                {/*    title={title}/>*/}
                 {/*<SectionBody>*/}
                 {/*    <ClusterWrapper*/}
                 {/*        scrollcb={_._handleScroll()}*/}
@@ -527,6 +602,18 @@ class Section2 extends Section {
     }
 
 
+    /**
+     * generate a new manager,
+     * @return a new manager object.
+     */
+    getNewManager(q, endpoints, filter=0){
+    //TODO
+        let manager = new SentencesManager(q, endpoints, filter)
+        return manager;
+    }
+
+
+
     //TODO active index should always be at the end,
     // SO that when triggering a loadMore, ...
 
@@ -558,13 +645,16 @@ class Section2 extends Section {
                 _.props.cb();
             })
         }
-
-        let items = _.manager.getAllItems();
-
+        let items = this.items;
         return (
             <div className={"row main_section2"}>
-                <SectionHead>
-                </SectionHead>
+                <SectionHead
+                    i={2}
+                    cb={this.onSearch.bind(this)}
+                    cbClear={this.onClear.bind(this)}
+                    title="Unclustered Sentences"
+                />
+
                 <SectionBody>
                     <UnclusteredSentencesWrapper cb={(_._handleScroll)()}>
                     {items.map((sentence, index) =>
@@ -574,7 +664,6 @@ class Section2 extends Section {
                     )}
                     </UnclusteredSentencesWrapper>
                 </SectionBody>
-                {/*<SectionHead i={2} cb={this.onSearch.bind(this)} cbClear={this.onClear.bind(this)} title="Unclustered Sentences"></SectionHead>*/}
                 {/*<SectionBody>*/}
                 {/*    <UnclusteredSentencesWrapper cb={(this._handleScroll)()} loadMore={()=>{_._loadItems(5,false)}}>*/}
                 {/*        {items.map((sentence, index) =>*/}
@@ -684,10 +773,6 @@ async function q(endpoint, params={}){
 const domContainer = document.querySelector('.AppContainer');
 const root = ReactDOM.createRoot(domContainer);
 root.render(<App q={q}></App>);
-
-
-
-
 
 // ==================== VIEW COMPONENTS ====================
 class SearchBar extends React.Component {
