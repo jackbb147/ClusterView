@@ -32,7 +32,7 @@ class Section extends React.Component {
 
         this.state = {
             displayTemp: false, // if true, display temporary items.
-            itemManagers:[]
+            managers:[]
         }
         this._boxClassName = undefined;
         this._itemClassName = undefined;
@@ -75,20 +75,21 @@ class Section extends React.Component {
     }
 
     get manager(){
-        return this.state.itemManagers[this.filter?this.filter:0];
-    }
-
-    get managers(){
-        return this.state.itemManagers;
+        return this.state.managers[this.filter?this.filter:0];
     }
 
     set manager(newManager){
-        print("App.js 248: setter called: ", newManager);
         let managers = this.managers;
         managers[this.filter?this.filter:0] = newManager;
-        this.setState({
-            managers: managers
-        })
+        this.managers = managers;
+    }
+
+    get managers(){
+        return this.state.managers;
+    }
+    set managers(newManagers){
+        print("setter called: managers: ", newManagers)
+        this.setState({managers: newManagers})
     }
 
 
@@ -101,7 +102,7 @@ class Section extends React.Component {
      * @return {*|*[]}
      */
     getItemsArr(i){
-        let manager = this.state.itemManagers[i];
+        let manager = this.state.managers[i];
         let items = manager
             ? manager.getAllItems()
             : [];   //TODO: refactor
@@ -211,26 +212,17 @@ class Section1 extends Section {
      * @return {Promise<Awaited<*>[]>}
      */
     async componentDidMount(){
-
         const _ = this;
         let manager = new ClustersManager(
             _.props.q,
             sectionEndpoints[_.props.i - 1],
         );
-        _.setState({
-            itemManagers: [manager]
-        })
+        _.managers = [manager];
         return manager.initiate()
             .then( () => {
-
-
-
                 //after initiating, call setState to trigger a re-render.
-                _.setState({
-                    itemManagers: [manager]
-                })
+                _.managers = [manager];
             })
-
     }
 
     //
@@ -424,7 +416,7 @@ class Section1 extends Section {
         // print("818: items: ", items);
         let filter = _.state.filter
         let items = _.getItemsArr(filter);
-        let manager = _.state.itemManagers[filter];
+        let manager = _.state.managers[filter];
         let activeIndex = manager ? manager.getActiveIndex() : -1;
 
         return (
@@ -507,27 +499,17 @@ class Section2 extends Section {
      * @return {Promise<Awaited<*>[]>}
      */
     async componentDidMount(){
-        print("Section2 Component did mount 502: ", this);
         const _ = this;
         let manager = new SentencesManager(
             _.props.q,
             sectionEndpoints[_.props.i - 1],
         );
-        _.setState({
-            itemManagers: [manager]
-        })
         return manager.initiate()
             .then( () => {
-                print("sentences manager initiated!");
-
-                print("99: ", _.state.itemManagers);
-                //after initiating, call setState to trigger a re-render.
-                _.setState({
-                    itemManagers: [manager]
-                })
                 manager.setActiveIndex(manager.count()-1);
+                //after initiating, call setState to trigger a re-render.
+                _.managers = [manager];
             })
-
     }
 
 
@@ -540,7 +522,7 @@ class Section2 extends Section {
         const _ = this;
         // let manager = _.state.itemManagers[0];
         let items = _.getItemsArr(0);
-
+        print("526 Section2: ", _.managers, items);
         return (
             <div className={"row main_section2"}>
                 <SectionHead>
