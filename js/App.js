@@ -42,6 +42,9 @@ class Section extends React.Component {
         this._title = undefined;
         this._endpoint = undefined; //e.g. "api/endpoint"
         this._gettingSome = false;
+        this._filter = 0;
+
+
     }
 
     /**
@@ -73,7 +76,7 @@ class Section extends React.Component {
 
 
     get filter(){
-        return this.state.filter;
+        return this._filter;
     }
 
     /**
@@ -81,9 +84,9 @@ class Section extends React.Component {
      * @param newFiler
      */
     set filter(newFiler){
-        print("79: set filter: new filter", newFiler);
+
         if(newFiler > 2 ) newFiler = 0;
-        this.setState({filter: newFiler});
+        this._filter = newFiler;
     }
 
     //TODO
@@ -196,11 +199,10 @@ class Section1 extends Section {
      */
     constructor(props) {
         super(props);
-        this.state.filter = 0;  // 0 for display all, 1 for accepted only, 2 for unaccepted only
 
         this._boxClassName = clustersBoxClassName;
         this._endpoint = clusterEndpoint;
-
+        this._filter = 0;    // 0 for display all, 1 for accepted only, 2 for unaccepted only
     }
 
     /**
@@ -238,10 +240,12 @@ class Section1 extends Section {
      */
     _filterDisplay(){
 
-        this.filter += 1;
-        print("594: filter now: ", this.filter);
+
+        this.filter++;
+        print("594: filter after: ", this.filter);
         this.manager.filter = this.filter;
         this.manager = this.manager;
+
         //TODO
     }
 
@@ -253,11 +257,15 @@ class Section1 extends Section {
 
     onRightClick(){
         const _ = this;
-
+        const manager = _.manager;
         function f(){
-            print("f called ");
-            let manager = _.manager;
-            manager.activeIndex += 1;
+            print2("f called ");
+            let oldindex = manager.activeIndex;
+            manager.activeIndex++;
+            print2(manager.activeIndex, oldindex, manager.activeIndex == oldindex)
+            if((manager.activeIndex) == oldindex){
+                print2("no change in index! ");
+            }
             _.manager = manager;    //set state, to trigger re-render
         }
 
@@ -296,37 +304,37 @@ class Section1 extends Section {
          * @param index the index of this cluster, in the currently displayed items array.
          */
         function toggler(accepted, id, index=undefined){
-            print("app.js 597, ", accepted, id, index);
-
-            //TODO send request to API
-            let queryString = accepted ? "unacceptcluster/" : "acceptcluster/";
-            queryString += id;
-            var changeStatusPromise = q(queryString);
-            changeStatusPromise.then(val => {
-                //TODO  trigger a reload
-                //  TODO 1. fetching  this cluster again
-                var clusterPromise = _._buildItem(id);
-                clusterPromise.then(cluster => {
-                    print("637: updated cluster: ", cluster)
-                    //TODO 2. swap this with the old one in the current items array.
-                    let items = _.state.displayTemp ? _.state.tempItems : _.state.loadedItems;
-                    items[index] = cluster;
-                    //TODO 2 then setstate to trigger a rerendering.
-                    if(_.state.displayTemp) {
-                        _.setState({
-                            tempItems: items
-                        })
-                    }else{
-                        _.setState({
-                            loadedItems: items
-                        })
-                    }
-                })
-
-
-            })
-
-
+            P("app.js 597, ", accepted, id, index);
+            //
+            // //TODO send request to API
+            // let queryString = accepted ? "unacceptcluster/" : "acceptcluster/";
+            // queryString += id;
+            // var changeStatusPromise = q(queryString);
+            // changeStatusPromise.then(val => {
+            //     //TODO  trigger a reload
+            //     //  TODO 1. fetching  this cluster again
+            //     var clusterPromise = _._buildItem(id);
+            //     clusterPromise.then(cluster => {
+            //         print("637: updated cluster: ", cluster)
+            //         //TODO 2. swap this with the old one in the current items array.
+            //         let items = _.state.displayTemp ? _.state.tempItems : _.state.loadedItems;
+            //         items[index] = cluster;
+            //         //TODO 2 then setstate to trigger a rerendering.
+            //         if(_.state.displayTemp) {
+            //             _.setState({
+            //                 tempItems: items
+            //             })
+            //         }else{
+            //             _.setState({
+            //                 loadedItems: items
+            //             })
+            //         }
+            //     })
+            //
+            //
+            // })
+            //
+            //
 
         }
 
@@ -416,7 +424,9 @@ class Section1 extends Section {
 
             <div className={"row main_section1"}>
                 <SectionHead
-                    filterCB={this._filterDisplay.bind(this)}>
+                    filterCB={this._filterDisplay.bind(this)}
+
+                >
 
                 </SectionHead>
 
@@ -424,7 +434,9 @@ class Section1 extends Section {
                     <ClusterWrapper
                         rightBtnClick={_.onRightClick()}
                         leftBtnClick={_.onLeftClick()}
-                        scrollcb={_._handleScroll()}>
+                        scrollcb={_._handleScroll()}
+
+                    >
                     {items.map((cardInfo, index) => {
 
                             let {accepted, title, feedbacks, id} = cardInfo,
@@ -437,6 +449,8 @@ class Section1 extends Section {
                                                 accepted={accepted}
                                                 feedbacks={feedbacks}
                                                 display={display}
+                                                index={index}
+                                                headCB={this._toggleAcceptedStatus()}
                             />
                     })}
                     </ClusterWrapper>
@@ -517,7 +531,7 @@ class Section2 extends Section {
         const _ = this;
         // let manager = _.state.itemManagers[0];
         let items = _.manager.getAllItems();
-        print("526 Section2: ", _.managers, items);
+
         return (
             <div className={"row main_section2"}>
                 <SectionHead>

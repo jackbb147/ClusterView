@@ -13,7 +13,18 @@ function innerHTML(el, str){
 }
 
 function print(...thing){
+    // console.log(...thing);
+}
+
+
+function print2(...thing){
     console.log(...thing);
+}
+
+function P(...thing){
+    let arr = thing;
+    console.trace()
+    alert(arr.join` `)
 }
 
 function removeClass(el, ...names){

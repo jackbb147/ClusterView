@@ -31,6 +31,24 @@ class SectionItemManager {
         this._filter = filter;  //0: all, 1:accepted only, 2: unacceptedonly
         this._q = q;
         this._activeindex = 0;
+
+        this._gettingsome = false;  //is a query pending?
+    }
+
+    get gettingsome(){
+        return this._gettingsome;
+    }
+
+    /**
+     *
+     */
+    get needsome(){
+        return this.count() === this.activeIndex+1
+            || (this.activeIndex - this.count()) < 5 //arbitrary
+    }
+
+    set gettingsome(bool){
+        this._gettingsome = bool;
     }
 
 
@@ -38,11 +56,82 @@ class SectionItemManager {
         //TODO
         //TODO there's supposed to be some major logic here
         // this._filter = newFilter;
-        print("41: new filter: ", newFilter);
+        print2("filter: ", newFilter)
+        this._filter = newFilter;
+
+        this._updateActiveIndex();
+    }
+
+    _updateActiveIndex(){
+        let nearestLeft =  this._nearestNeighbor(-1);
+
+        if(this._isValidIndex(nearestLeft)){
+            print2(" setting index to nearest LEFT: ", nearestLeft);
+            this.activeIndex = nearestLeft;
+        }
+        else{
+            let nearestRight = this._nearestNeighbor(1);
+            if(this._isValidIndex(nearestRight)){
+                print2(" setting index to nearest RIGHT: ", nearestRight);
+                this.activeIndex = nearestRight;
+            }else{
+                P("no nearest left, and no nearest right!")
+            }
+        }
     }
 
     get filter(){
         return this._filter;
+    }
+
+    /**
+     * find the index of the nearest neighbor of the
+     * current active index that is not filtered out.
+     * if none is found, return active index instead.
+     * @private
+     */
+    _nearestNeighbor(increment){
+        //TODO handle when increment is undefined
+        print2("nearest neighbor(): increment: ", increment);
+        const _ = this;
+        let walker = _.activeIndex;
+        do{
+            walker += increment;
+        }while(
+            walker >= 0 &&
+            walker < _.count() &&
+            _._isfilteredOut(walker)
+        )
+        return this._isValidIndex(walker) ? walker : this.activeIndex;
+
+        // return 2;
+        // let next = increment
+        // for(let i = 0;  next < _.count() && next >= 0 ; next += increment, i++){
+        //     print2("next: ", next);
+        //     if( !this._isfilteredOut(next) && !(next ===_.activeIndex) ){
+        //         print2("returning: ", next)
+        //         return next;
+        //     }
+        // }
+
+
+        // next = _.activeIndex;
+        // print2("70: next: ", next, _._itemstore, "increment: ", increment);
+        // return next;
+    }
+
+    /**
+     *  an index is invalid when: it is out of bounds, or it is filtered out.
+     * @param index
+     * @return {boolean}
+     * @private
+     */
+    _isValidIndex(index){
+        //TODO
+        const _ = this;
+        if(index < 0 || index >= this.count() || _._isfilteredOut(index))
+            return false
+        return true;
     }
 
     get activeIndex(){
@@ -50,52 +139,125 @@ class SectionItemManager {
     }
 
     //TODO
-    _isfilteredOut(index){
-        print("53: isFilteredOut called. FIlter: ", this.filter);
-        return false;
-        // const _ = this;
-        // let item = _.getAt(index);
-        // switch (_.filter){
-        //     case 0:
-        //         return false;
-        //     case 1:
-        //         return !Boolean(item.accepted);
-        //     case 2:
-        //         return Boolean(item.accepted);
-        // }
+    /**
+     * check if the item at the given index is filtered out.
+     * @param index
+     * @return {boolean}
+     * @private
+     */
+    _isfilteredOut(index) {
+
+        const _ = this;
+        let item = _.getAt(index);
+        // P("index: ", index, "item accepted: ", item.accepted)
+        // print2("is filtered out called with item: ", item, "filter: ", _.filter)
+        print2("FILTER: ", _.filter);
+        switch (_.filter) {
+            case 0:
+                return false;
+            case 1:
+                // console.trace()
+                print2("index: ", index, "filtered out? ", !Boolean(item.accepted) )
+                return !Boolean(item.accepted);
+            case 2:
+                return Boolean(item.accepted);
+        }
     }
 
-    set activeIndex(newIndex){
+
+    set activeIndex(newIndex)
+    {
         const _ = this;
-        print( "setter called from:  active index: ", _._activeindex, "newIndex: ", newIndex);
-        if(newIndex < 0) return;
+        console.trace()
+        print2("setter called from:  active index: ",
+            _._activeindex,
+            "filter: ", _.filter,
+            "newIndex: ", newIndex,
+            "items: ", _.getAllItems());
+        if (!_._isValidIndex(newIndex)) {
+            print2("not a valid index: ", newIndex);
+            let forward = newIndex >= this.activeIndex;
+            let nearest = this._nearestNeighbor(forward ? 1 : -1);
+            this.activeIndex = nearest;
 
+        } else
+        {
+            let forward = newIndex > _.activeIndex;
+            _._activeindex = newIndex;
+            print2("successfully set index: ", _.activeIndex);
 
-        if(newIndex < _.count()) {
-            this._activeindex = newIndex;
-        }
-        else {
-            /**
-             * NOTE: AUTOMATICALLY FETCH MORE FROM API, IF NEW INDEX IS OUT OF BOUNDS.
-             */
-            if(_.count() < _._itemIDstore.count()){
-                let newItemPromises = _._prepItems(5, _.count());
-                newItemPromises.then(items => {
-                    _.stockUp(items);
-                    _._activeindex = newIndex;
-                })
+            if(
+                forward
+                && _.needsome
+                && _.count() < _._itemIDstore.count()
+                && !_.gettingsome
+            ){
+                _.gettingsome = true;
+                _._replenishInventory().then(()=>{
+                    _.gettingsome=false
+                    print2("replenished!");
+                });
             }
         }
 
-        // if(this._isfilteredOut(_.activeIndex)) {
-        //     print("95: got filtered out. ");
-        //     _.activeIndex+=1;
-        // }
     }
 
+    /**
+     * reminder to restock
+     * @param desiredIndex
+     * @return {Promise<void>}
+     */
+    // async replenishReminder(desiredIndex){
+    //     print2("replenish reminder received: ", desiredIndex);
+        // if(newIndex < 0) return;
 
+        // if(_._isValidIndex(newIndex)) {
+        //     // print2("is valid index: ", newIndex);
+        //     if(newIndex === _.activeIndex)
+        //         print2("139. same. ")
+        //     this._activeindex = newIndex
+        //
+        // }
+        // else {
+        //     let forward = Boolean(newIndex >= this.activeIndex);
+        //     let increment =  forward ? 1 : -1;
+        //     let nearest = _._nearestNeighbor(increment);
+        //
+        //
+        //     if(
+        //         (forward && _.activeIndex === nearest) ||
+        //         forward
+        //         && _.needsome
+        //         && _.count() < _._itemIDstore.count()
+        //         && !_.gettingsome
+        //     ){
+        //         _.gettingsome = true;
+        //         _._replenishInventory().then(()=>{
+        //             _.gettingsome=false
+        //             print("171: ", _.gettingsome);
+        //             _.activeIndex++;
+        //         });
+        //     }
+        //     else{
+        //         _.activeIndex = nearest;
+        //     }
+        // }
+    // }
 
+    /**
+     * fetch more items, then append to items list.
+     * @private
+     */
+    async _replenishInventory(){
 
+        const _ = this;
+
+        let newItemPromises = _._prepItems(5, _.count());
+        return newItemPromises.then(items => {
+            _.stockUp(items);
+
+        })
+    }
 
 
     /**
@@ -264,7 +426,7 @@ class SectionItemManager {
      */
     async fetchN(n, which, customEndpoint, starting=0){
         const _ = this;
-        print("238: ", n, which, customEndpoint)
+
         let promises = [];
         for(let i = 0; i < n; i++)
             promises.push(_.fetchOne(starting+i, which, customEndpoint));
@@ -319,7 +481,7 @@ class ClustersManager extends SectionItemManager {
             if(!cluster ) continue;
             items.push(_._buildObject(cluster, feedbacks));
         }
-        print("291: ", items);
+
         return items;
     }
 
@@ -382,3 +544,4 @@ class SentencesManager extends SectionItemManager {
 
 }
 
+// test_isValid(new SectionItemManager()._isValidIndex)
