@@ -98,7 +98,7 @@ class Section extends React.Component {
      * @return {*|*[]}
      */
     getItemsArr(i){
-        let manager = this.state.managers[i];
+        let manager = this.managers[i];
         let items = manager
             ? manager.getAllItems()
             : [];   //TODO: refactor
@@ -198,8 +198,10 @@ class Section1 extends Section {
     constructor(props) {
         super(props);
         this.state.filter = 0;  // 0 for display all, 1 for accepted only, 2 for unaccepted only
+
         this._boxClassName = clustersBoxClassName;
         this._endpoint = clusterEndpoint;
+
     }
 
     /**
@@ -411,7 +413,7 @@ class Section1 extends Section {
         // print("818: items: ", items);
         let filter = _.state.filter
         let items = _.getItemsArr(filter);
-        let manager = _.state.managers[filter];
+        let manager = _.manager;
         let activeIndex = manager ? manager.getActiveIndex() : -1;
 
         return (
