@@ -19,52 +19,8 @@ const sectionEndpoints = [
     [unclusteredSentencesEndpoint, sentenceEndpoint]
 ];
 
-// ==================== COMPONENTS ====================
-class SearchBar extends React.Component {
-    /**
-     * this.props.cb: callback function for search btn
-     * this.props.i: 1 or 2 (identifier used for classname)
+// ----------- SECTION LOGIC ------------------------
 
-     */
-    constructor(props) {
-        super(props);
-    }
-
-    /**
-     * after pressing search, the clear button appears.
-     * After clearing, the clear button disappears.
-     * @private
-     */
-    _onSearch(){
-        //TODO
-        var clearBtn = document.querySelector(`.searchBar-${this.props.i} >.searchBar_clear`)
-        if(clearBtn.classList.contains("no-display")){
-            clearBtn.classList.remove("no-display");
-        }
-        this.props.cb();
-    }
-
-    _onClear(){
-        //TODO
-        var clearBtn = document.querySelector(`.searchBar-${this.props.i} >.searchBar_clear`);
-        clearBtn.classList.add("no-display");
-        this.props.cbClear();
-    }
-    render(){
-        return (
-            <div className={`${searchBarClassName} ${searchBarClassName}-${this.props.i}`}>
-                <div className={"searchBar_input"}>
-                    <input type="text"/>
-                </div>
-                <div className={"searchBar_btn btn"} onClick={this._onSearch.bind(this)}>Search</div>
-                <div className={"searchBar_clear no-display"} onClick={this._onClear.bind(this)}>Clear</div>
-            </div>
-        )
-    }
-}
-
-//TODO some major refactoring needed for section1 and section2 to extend Section.
-//TODO each section has a _store variable, _initiateStore() method
 class Section extends React.Component {
     /**
      * this.props.i: 1 or 2 (corresponding to section1 and section2)
@@ -85,7 +41,11 @@ class Section extends React.Component {
         this._gettingSome = false;
     }
 
-    componentDidMount(){
+    /**
+     *
+     * @return {Promise<Awaited<*>[]>}
+     */
+    async componentDidMount(){
         const _ = this;
         let manager = new SectionItemManager(
             _.props.q,
@@ -94,12 +54,16 @@ class Section extends React.Component {
         _.setState({
             itemManagers: [manager]
         })
-        manager.initiate()
+        return manager.initiate()
             .then( () => {
                 print("manager initiated!");
 
                 print("99: ", _.state.itemManagers);
-        })
+                //after initiating, call setState to trigger a re-render.
+                _.setState({
+                    itemManagers: [manager]
+                })
+            })
 
     }
 
@@ -161,315 +125,29 @@ class Section extends React.Component {
         prom.then(store => {
             print("app.js 113: ", store);
 
-        //TODO print the load method
+            //TODO print the load method
             print("app.js 86: ", this._loadItems);
-        //TODO load the fetched items to some array.
+            //TODO load the fetched items to some array.
             this._loadItems(-1,
                 false,
                 store,
                 this.state.tempItems)
                 .then(val => {
                     this.setState(this.state);
-        //TODO print the box
+                    //TODO print the box
                     print("app.js 158: ", this._boxClassName );
 
-        //TODO print the loaded temporary items.
+                    //TODO print the loaded temporary items.
                     print("app.js 160: ", this.state.tempItems);
-        //TODO hide current items
+                    //TODO hide current items
                     this._displayTempItems();
-        //TODO load the temporary items into view.
+                    //TODO load the temporary items into view.
 
                 })
         })
     }
 
 }
-
-// ----------- SECTION 1 ----------------
-
-class SectionHead extends React.Component {
-    /**
-     * this.props.cb: callback function passed to search btn.
-     * @param props
-     */
-    constructor(props) {
-        super(props);
-    }
-
-    render(){
-
-        return (
-            <div className={"col-12 section_head"}>
-                <div className={"container_fluid"}>
-                    <div className={this.props.filterCB?"filterBtn btn btn-primary":""} onClick={this.props.filterCB}>{this.props.title}</div>
-                    <SearchBar i={this.props.i} cb={this.props.cb} cbClear={this.props.cbClear}></SearchBar>
-                </div>
-            </div>
-        )
-    }
-}
-
-class ClustersBox extends React.Component {
-    constructor(props) {
-        super(props);
-        this.classname = clustersBoxClassName;
-
-    }
-
-
-    render(){
-        const _ = this;
-        let filter = this.props.filter;
-
-        return (
-            <div onScroll={_.props.scrollcb.bind(_)} className="col col-10 hideScrollBar clusters-box">
-                {this.props.children}
-            </div>
-        )
-    }
-}
-
-
-
-
-class SetAcceptedStatusBtn extends React.Component{
-    constructor(props) {
-        super(props);
-        if(!this.props.accepted) {
-            this.className = "ClusterCard_accept-btn "
-            this.text = "accept"
-        }
-
-    }
-
-    _handleClick(){
-        print("you clicked me ")
-        print("323: button clicked",this.props.accepted , this.props.id);
-        this.props.cb(this.props.accepted, this.props.id, this.props.index)
-    }
-
-    render(){
-
-        var className = this.props.accepted ?
-            'ClusterCard_unaccept-btn' : "ClusterCard_accept-btn";
-        var text = this.props.accepted ? 'unaccept':'accept';
-        return (
-            <div onClick={this._handleClick.bind(this)} className={className + " btn" }>{text}</div>
-        )
-    }
-}
-
-
-class ClusterCardHead extends React.Component {
-    constructor(props) {
-        super(props);
-    }
-
-    render( ) {
-        return (
-            <div className={"row ClusterCard_head"}>
-                <div className={"col ClusterCard_title"}>{this.props.title}</div>
-                {/*<div className={"ClusterCard_close"}>X</div>*/}
-                <SetAcceptedStatusBtn
-                    accepted={this.props.accepted}
-                    id={this.props.id}
-                    cb={this.props.cb}
-                    index={this.props.index}
-                />
-            </div>
-        )
-    }
-}
-
-class ClusterCardFeedbackEntry extends React.Component {
-    constructor(props) {
-        super(props);
-    }
-
-    /**
-     * callback for remove feedback
-     */
-    onRemove(){
-        var clusterID = this.props.clusterID || -666;   //TODO
-        var sentenceID = this.props.id;
-        var clusterIndex = this.props.clusterIndex;
-        print("381: onRemove called: ", clusterID, sentenceID, clusterIndex);
-
-
-        this.props.cb(clusterID, sentenceID, clusterIndex);
-        //TODO
-    }
-
-
-
-
-    render() {
-        var text = this.props.text;
-        return (
-            <div className={"row ClusterCard_feedback"}>
-                <div className={"feedback_entry"}>{text}</div>
-                <div onClick={this.onRemove.bind(this)} className={"feedback_remove btn"}>remove</div>
-            </div>
-        )
-    }
-}
-
-class ClusterCardBody extends React.Component {
-    constructor(props) {
-        super(props);
-    }
-
-    /**
-     * TODO: a little ugly
-     * (the text format is "text$fbid") seperate
-     * the text and feedbackid. return an array
-     * @return Array [text, ID]
-     */
-    _processText(rawText) {
-        //TODO
-        if(!rawText) return [undefined, undefined];
-        var rawArr = rawText.split('');
-        var index = rawArr.lastIndexOf('$');
-
-        let text = rawArr.splice(0, index);
-        rawArr.shift();
-        let fbID = Number(rawArr.join(''));
-        // print("fbID: ", fbID);
-        return [text.join(''), fbID];
-    }
-
-
-    render( ) {
-        const _ = this;
-        var i = 0;
-        return (
-            <div className={"row ClusterCard_body hideScrollBar"}>
-                <div className={"container_fluid ClusterCard_body_container hideScrollBar"}>
-                    {
-                        this.props.feedbacks.map(fb =>{
-                            let textNid = _._processText(fb);
-                            if(!(textNid[1] === undefined))
-
-                                return <ClusterCardFeedbackEntry
-                                    key={i}
-                                    text={textNid[0]}
-                                    id={textNid[1]} //sentenceID
-                                    clusterID={this.props.clusterID}
-                                    cb={this.props.removeCB}
-                                    index={i++}
-                                    clusterIndex={this.props.clusterIndex}
-                                />
-                        }
-                        )
-                    }
-                </div>
-            </div>
-        )
-    }
-}
-
-class ClusterCard extends React.Component {
-    /**
-     *
-     * @param props {title, feedbacks}
-     */
-    constructor(props) {
-        super(props);
-
-    }
-
-
-    render() {
-        let accepted = this.props.accepted;
-        let display = this.props.display ? "" : "no-display-until-lg"
-
-        return (
-            <div className={`ClusterCard ${display} ${accepted ? acceptedClassName : unacceptedClassName}`}>
-                <div className={"container_fluid"}>
-                    <ClusterCardHead index={this.props.index} cb={this.props.headCB} id={this.props.id} accepted={this.props.accepted} title={this.props.title}></ClusterCardHead>
-                    <ClusterCardBody
-                        feedbacks={this.props.feedbacks}
-                        removeCB={this.props.removeCB}
-                        clusterID={this.props.id}
-                        clusterIndex={this.props.index}
-                    />
-                </div>
-            </div>
-        );
-    }
-}
-
-class ClusterWrapper extends React.Component {
-    constructor(props) {
-        super(props);
-    }
-
-    render(){
-        const _ = this;
-        return (
-            <div  className={"container_fluid clustersWrapper"}>
-                <div className="row" >
-                    <LeftBtn cb={this.props.leftBtnClick}></LeftBtn>
-                    <ClustersBox filter={this.props.filter} filterCB={this.props.filterCB} scrollcb={_.props.scrollcb}>{this.props.children}</ClustersBox>
-                    <RightBtn cb={this.props.rightBtnClick}></RightBtn>
-                </div>
-            </div>
-        )
-    }
-}
-
-class LeftBtn extends React.Component {
-    constructor(props) {
-        super(props);
-    }
-
-    handleClick(){
-        print("clicked me ");
-        this.props.cb();
-        var current = document.querySelector(".ClusterCard:not(.no-display-until-lg)")
-        if(current === null) return;
-        var prev = current.previousElementSibling;
-        if(prev=== null) return;
-        removeClass(prev, "no-display-until-lg");
-        addClass(current, "no-display-until-lg");
-
-    }
-
-    render() {
-        return (
-            <div  className={"d-lg-none col col-1 leftBtn btn"}>
-                <div onClick={this.handleClick.bind(this)}>{"<"}</div>
-            </div>
-        )
-    }
-}
-
-class RightBtn extends React.Component {
-    constructor(props) {
-        super(props);
-    }
-
-    handleClick(){
-        print("clicked me ");
-        this.props.cb();
-        var current = document.querySelector(".ClusterCard:not(.no-display-until-lg)")
-        if(current === null) return;
-        var next = current.nextElementSibling;
-        if(next === null) return;
-        removeClass(next, "no-display-until-lg");
-        addClass(current, "no-display-until-lg");
-
-    }
-
-    render() {
-        return (
-            <div  className={"d-lg-none col col-1 rightBtn btn"}>
-                <div onClick={this.handleClick.bind(this)}> {">"}</div>
-            </div>
-        )
-    }
-}
-
 
 class Section1 extends Section {
     /**
@@ -633,7 +311,7 @@ class Section1 extends Section {
             // })
             //on resolve, fetch the cluster
 
-                // on resolve, set state
+            // on resolve, set state
         }
 
         return f;
@@ -646,7 +324,7 @@ class Section1 extends Section {
         // print("804: new filter value: ", this.state.filter);
         const _ = this;
         // var items = this.state.displayTemp ?
-        //     this.state.tempItems : 
+        //     this.state.tempItems :
         //     this.state.loadedItems;
         // var items = this.state.itemManager[]
         // var filter = {
@@ -669,6 +347,15 @@ class Section1 extends Section {
         return (
 
             <div className={"row main_section1"}>
+                <SectionHead>
+
+                </SectionHead>
+
+                <SectionBody>
+                    <ClusterWrapper>
+
+                    </ClusterWrapper>
+                </SectionBody>
                 {/*<SectionHead*/}
                 {/*    filterCB={this._filterDisplay.bind(this)}*/}
                 {/*    i={1}*/}
@@ -686,7 +373,7 @@ class Section1 extends Section {
                 {/*                return <ClusterCard key={index}*/}
                 {/*                                    title={cardInfo.title}*/}
                 {/*                                    accepted={accepted}*/}
-                
+
                 {/*                                    feedbacks={cardInfo.feedbacks}*/}
                 {/*                                    display={index === _.state._activeCardIndex}*/}
                 {/*                                    headCB={this._toggleAcceptedStatus()} //the callback function for (un)acceptBtn*/}
@@ -696,7 +383,7 @@ class Section1 extends Section {
                 {/*                >*/}
                 {/*                </ClusterCard>*/}
                 {/*            }*/}
-                
+
                 {/*        )}*/}
                 {/*    </ClusterWrapper>*/}
                 {/*</SectionBody>*/}
@@ -705,59 +392,8 @@ class Section1 extends Section {
     }
 }
 
-
-
-
-// ----------- SECTION 2 ----------------
-
-class UnclusteredSentence extends React.Component {
-    constructor(props) {
-        super(props);
-    }
-
-    render(){
-        return (
-            <div className={"row unclustered-sentence"}>{this.props.text}</div>
-        )
-    }
-
-}
-
-class SectionBody extends React.Component {
-    constructor(props) {
-        super(props);
-    }
-
-    render(){
-        return (
-            <div className={"col-12 section_body"}>
-                {this.props.children}
-            </div>
-        )
-    }
-}
-
-class UnclusteredSentencesWrapper extends React.Component {
-    constructor(props) {
-        super(props);
-        this.classname = "unclusteredSentencesWrapper"
-    }
-
-
-    render(){
-        const _ = this;
-        return (
-            <div
-                onScroll={this.props.cb.bind(this)}
-                 className={"container_fluid unclusteredSentencesWrapper hideScrollBar"}>
-                {this.props.children}
-            </div>
-        )
-    }
-}
-
 /**
- * The unclustered sentences view
+ * The unclustered sentences View
  */
 class Section2 extends Section {
     constructor(props) {
@@ -768,24 +404,40 @@ class Section2 extends Section {
 
     }
 
-    // componentDidMount(){
-    //     const _ = this;
-    //     const q = this.props.q;
-    //     print("I(SECTION2) MOUNTED!");
-    //     _._initiateStore()
-    //         .then(store => {
-    //             _._store = store;
-    //             print("section 2: ", store.getAll());
-    //             _._loadItems(10, false);
-    //
-    //         })
-    // }
+
+    //TODO active index should always be at the end,
+    // SO that when triggering a loadMore, ...
+
+
+    async componentDidMount() {
+        const _ = this;
+        return super.componentDidMount().then(() => {
+            let manager = _.state.itemManagers[0];
+            manager.setActiveIndex(manager.count()-1);
+            print("778: ", manager.getActiveIndex());
+        })
+    }
 
     render(){
         const _ = this;
-        // var items = this.state.displayTemp ? this.state.tempItems : this.state.loadedItems;
+        let manager = _.state.itemManagers[0];
+        let items = manager
+            ? manager.getAllItems().map(item => item[0])  // because item is an array of length 1. (See API documentation)
+            : [];   //TODO: refactor
+        print("425: items: ", items);
         return (
             <div className={"row main_section2"}>
+                <SectionHead>
+                </SectionHead>
+                <SectionBody>
+                    <UnclusteredSentencesWrapper>
+                        {items.map((sentence, index) =>
+                            <UnclusteredSentence
+                                key={index}
+                                text={sentence.sentence_text}/>
+                        )}
+                    </UnclusteredSentencesWrapper>
+                </SectionBody>
                 {/*<SectionHead i={2} cb={this.onSearch.bind(this)} cbClear={this.onClear.bind(this)} title="Unclustered Sentences"></SectionHead>*/}
                 {/*<SectionBody>*/}
                 {/*    <UnclusteredSentencesWrapper cb={(this._handleScroll)()} loadMore={()=>{_._loadItems(5,false)}}>*/}
@@ -798,9 +450,6 @@ class Section2 extends Section {
         )
     }
 }
-
-
-
 
 // ----------- APP ------------------------
 class App extends React.Component {
@@ -852,3 +501,391 @@ async function q(endpoint, params={}){
 const domContainer = document.querySelector('.AppContainer');
 const root = ReactDOM.createRoot(domContainer);
 root.render(<App q={q}></App>);
+
+
+
+
+
+// ==================== VIEW COMPONENTS ====================
+class SearchBar extends React.Component {
+    /**
+     * this.props.cb: callback function for search btn
+     * this.props.i: 1 or 2 (identifier used for classname)
+
+     */
+    constructor(props) {
+        super(props);
+    }
+
+    /**
+     * after pressing search, the clear button appears.
+     * After clearing, the clear button disappears.
+     * @private
+     */
+    _onSearch(){
+        //TODO
+        var clearBtn = document.querySelector(`.searchBar-${this.props.i} >.searchBar_clear`)
+        if(clearBtn.classList.contains("no-display")){
+            clearBtn.classList.remove("no-display");
+        }
+        this.props.cb();
+    }
+
+    _onClear(){
+        //TODO
+        var clearBtn = document.querySelector(`.searchBar-${this.props.i} >.searchBar_clear`);
+        clearBtn.classList.add("no-display");
+        this.props.cbClear();
+    }
+    render(){
+        return (
+            <div className={`${searchBarClassName} ${searchBarClassName}-${this.props.i}`}>
+                <div className={"searchBar_input"}>
+                    <input type="text"/>
+                </div>
+                <div className={"searchBar_btn btn"} onClick={this._onSearch.bind(this)}>Search</div>
+                <div className={"searchBar_clear no-display"} onClick={this._onClear.bind(this)}>Clear</div>
+            </div>
+        )
+    }
+}
+
+
+// ----------- SECTION 1 ----------------
+
+class SectionHead extends React.Component {
+    /**
+     * this.props.cb: callback function passed to search btn.
+     * @param props
+     */
+    constructor(props) {
+        super(props);
+    }
+
+    render(){
+
+        return (
+            <div className={"col-12 section_head"}>
+                <div className={"container_fluid"}>
+                    <div className={this.props.filterCB?"filterBtn btn btn-primary":""} onClick={this.props.filterCB}>{this.props.title}</div>
+                    <SearchBar i={this.props.i} cb={this.props.cb} cbClear={this.props.cbClear}></SearchBar>
+                </div>
+            </div>
+        )
+    }
+}
+
+class ClustersBox extends React.Component {
+    constructor(props) {
+        super(props);
+        this.classname = clustersBoxClassName;
+
+    }
+
+
+    render(){
+        const _ = this;
+        let filter = this.props.filter;
+
+        return (
+            <div onScroll={_.props.scrollcb ? _.props.scrollcb.bind(_) : ()=>{}} className="col col-10 hideScrollBar clusters-box">
+                {this.props.children}
+            </div>
+        )
+    }
+}
+
+
+
+
+class SetAcceptedStatusBtn extends React.Component{
+    constructor(props) {
+        super(props);
+        if(!this.props.accepted) {
+            this.className = "ClusterCard_accept-btn "
+            this.text = "accept"
+        }
+
+    }
+
+    _handleClick(){
+        print("you clicked me ")
+        print("323: button clicked",this.props.accepted , this.props.id);
+        this.props.cb(this.props.accepted, this.props.id, this.props.index)
+    }
+
+    render(){
+
+        var className = this.props.accepted ?
+            'ClusterCard_unaccept-btn' : "ClusterCard_accept-btn";
+        var text = this.props.accepted ? 'unaccept':'accept';
+        return (
+            <div onClick={this._handleClick.bind(this)} className={className + " btn" }>{text}</div>
+        )
+    }
+}
+
+
+class ClusterCardHead extends React.Component {
+    constructor(props) {
+        super(props);
+    }
+
+    render( ) {
+        return (
+            <div className={"row ClusterCard_head"}>
+                <div className={"col ClusterCard_title"}>{this.props.title}</div>
+                {/*<div className={"ClusterCard_close"}>X</div>*/}
+                <SetAcceptedStatusBtn
+                    accepted={this.props.accepted}
+                    id={this.props.id}
+                    cb={this.props.cb}
+                    index={this.props.index}
+                />
+            </div>
+        )
+    }
+}
+
+class ClusterCardFeedbackEntry extends React.Component {
+    constructor(props) {
+        super(props);
+    }
+
+    /**
+     * callback for remove feedback
+     */
+    onRemove(){
+        var clusterID = this.props.clusterID || -666;   //TODO
+        var sentenceID = this.props.id;
+        var clusterIndex = this.props.clusterIndex;
+        print("381: onRemove called: ", clusterID, sentenceID, clusterIndex);
+
+
+        this.props.cb(clusterID, sentenceID, clusterIndex);
+        //TODO
+    }
+
+
+
+
+    render() {
+        var text = this.props.text;
+        return (
+            <div className={"row ClusterCard_feedback"}>
+                <div className={"feedback_entry"}>{text}</div>
+                <div onClick={this.onRemove.bind(this)} className={"feedback_remove btn"}>remove</div>
+            </div>
+        )
+    }
+}
+
+class ClusterCardBody extends React.Component {
+    constructor(props) {
+        super(props);
+    }
+
+    /**
+     * TODO: a little ugly
+     * (the text format is "text$fbid") seperate
+     * the text and feedbackid. return an array
+     * @return Array [text, ID]
+     */
+    _processText(rawText) {
+        //TODO
+        if(!rawText) return [undefined, undefined];
+        var rawArr = rawText.split('');
+        var index = rawArr.lastIndexOf('$');
+
+        let text = rawArr.splice(0, index);
+        rawArr.shift();
+        let fbID = Number(rawArr.join(''));
+        // print("fbID: ", fbID);
+        return [text.join(''), fbID];
+    }
+
+
+    render( ) {
+        const _ = this;
+        var i = 0;
+        return (
+            <div className={"row ClusterCard_body hideScrollBar"}>
+                <div className={"container_fluid ClusterCard_body_container hideScrollBar"}>
+                    {
+                        this.props.feedbacks.map(fb =>{
+                                let textNid = _._processText(fb);
+                                if(!(textNid[1] === undefined))
+
+                                    return <ClusterCardFeedbackEntry
+                                        key={i}
+                                        text={textNid[0]}
+                                        id={textNid[1]} //sentenceID
+                                        clusterID={this.props.clusterID}
+                                        cb={this.props.removeCB}
+                                        index={i++}
+                                        clusterIndex={this.props.clusterIndex}
+                                    />
+                            }
+                        )
+                    }
+                </div>
+            </div>
+        )
+    }
+}
+
+class ClusterCard extends React.Component {
+    /**
+     *
+     * @param props {title, feedbacks}
+     */
+    constructor(props) {
+        super(props);
+
+    }
+
+
+    render() {
+        let accepted = this.props.accepted;
+        let display = this.props.display ? "" : "no-display-until-lg"
+
+        return (
+            <div className={`ClusterCard ${display} ${accepted ? acceptedClassName : unacceptedClassName}`}>
+                <div className={"container_fluid"}>
+                    <ClusterCardHead index={this.props.index} cb={this.props.headCB} id={this.props.id} accepted={this.props.accepted} title={this.props.title}></ClusterCardHead>
+                    <ClusterCardBody
+                        feedbacks={this.props.feedbacks}
+                        removeCB={this.props.removeCB}
+                        clusterID={this.props.id}
+                        clusterIndex={this.props.index}
+                    />
+                </div>
+            </div>
+        );
+    }
+}
+
+class ClusterWrapper extends React.Component {
+    constructor(props) {
+        super(props);
+    }
+
+    render(){
+        const _ = this;
+        return (
+            <div  className={"container_fluid clustersWrapper"}>
+                <div className="row" >
+                    <LeftBtn cb={this.props.leftBtnClick}></LeftBtn>
+                    <ClustersBox filter={this.props.filter} filterCB={this.props.filterCB} scrollcb={_.props.scrollcb}>{this.props.children}</ClustersBox>
+                    <RightBtn cb={this.props.rightBtnClick}></RightBtn>
+                </div>
+            </div>
+        )
+    }
+}
+
+class LeftBtn extends React.Component {
+    constructor(props) {
+        super(props);
+    }
+
+    handleClick(){
+        print("clicked me ");
+        this.props.cb();
+        var current = document.querySelector(".ClusterCard:not(.no-display-until-lg)")
+        if(current === null) return;
+        var prev = current.previousElementSibling;
+        if(prev=== null) return;
+        removeClass(prev, "no-display-until-lg");
+        addClass(current, "no-display-until-lg");
+
+    }
+
+    render() {
+        return (
+            <div  className={"d-lg-none col col-1 leftBtn btn"}>
+                <div onClick={this.handleClick.bind(this)}>{"<"}</div>
+            </div>
+        )
+    }
+}
+
+class RightBtn extends React.Component {
+    constructor(props) {
+        super(props);
+    }
+
+    handleClick(){
+        print("clicked me ");
+        this.props.cb();
+        var current = document.querySelector(".ClusterCard:not(.no-display-until-lg)")
+        if(current === null) return;
+        var next = current.nextElementSibling;
+        if(next === null) return;
+        removeClass(next, "no-display-until-lg");
+        addClass(current, "no-display-until-lg");
+
+    }
+
+    render() {
+        return (
+            <div  className={"d-lg-none col col-1 rightBtn btn"}>
+                <div onClick={this.handleClick.bind(this)}> {">"}</div>
+            </div>
+        )
+    }
+}
+
+
+
+
+
+// ----------- SECTION 2 ----------------
+
+class UnclusteredSentence extends React.Component {
+    constructor(props) {
+        super(props);
+    }
+
+    render(){
+        print("848: my text: ", this.props.text);
+        return (
+            <div className={"row unclustered-sentence"}>{this.props.text}</div>
+        )
+    }
+
+}
+
+class SectionBody extends React.Component {
+    constructor(props) {
+        super(props);
+    }
+
+    render(){
+        return (
+            <div className={"col-12 section_body"}>
+                {this.props.children}
+            </div>
+        )
+    }
+}
+
+class UnclusteredSentencesWrapper extends React.Component {
+    constructor(props) {
+        super(props);
+        this.classname = "unclusteredSentencesWrapper"
+    }
+
+
+    render(){
+        const _ = this;
+        return (
+            <div
+                onScroll={_.props.cb ? _.props.cb.bind(_) : ()=>{}}
+                className={"container_fluid unclusteredSentencesWrapper hideScrollBar"}>
+                {this.props.children}
+            </div>
+        )
+    }
+}
+

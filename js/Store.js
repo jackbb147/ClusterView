@@ -23,7 +23,7 @@ class Store{
 
     isValidIndex(i){
         //TOOD
-        return (i + 1 < this.items.length && 0 <= i)
+        return (i < this.items.length && 0 <= i)
     }
 
     getItems(){
@@ -72,6 +72,7 @@ class SectionItemManager {
         this._itemIDstore = new Store()
         this._filter = filter;
         this._q = q;
+        this._activeindex = 0;
     }
 
 
@@ -90,13 +91,52 @@ class SectionItemManager {
     }
 
     /**
+     * How many items do I currently have?
+     * @return {number}
+     */
+    count(){
+        return this._itemstore.count();
+    }
+
+    /**
      * get the item at index i.
      * @param i if i is -1, get ALL.
      */
-    get(i=-1){
+    getAt(i=-1){
         //TODO
         return i === -1 ? this._itemstore.getItems() : this._itemstore.get(i);
     }
+
+    /**
+     * get all my items.
+     */
+    getAllItems(){
+       return this._itemstore.items;
+    }
+
+    getActiveIndex(){
+        return this._activeindex;
+    }
+
+    setActiveIndex(i){
+        if(!this._itemstore.isValidIndex(i)){
+            print(i+" is not a valid index. ");
+            return;
+        }
+            this._activeindex = i;
+    }
+
+    incrementIndex(n=1){
+        let count = _._itemstore.count();
+        if(this._activeindex + n < count) this._activeindex+=n;
+    }
+
+    decrementCount(n=1){
+        let count = _._itemstore.count();
+        if(this._activeindex - n >= 0) this._activeindex-=n;
+    }
+
+
 
 
     /**
@@ -176,7 +216,7 @@ class SectionItemManager {
 
     /**
      * fetch one item (whose ID is at index i of ID store) from the API
-     * @param which: 0 or 1. Which endpoint to use.
+     * @param which: 0 or 1. Which endpoint to use. e.g. /cluster/46904 is not the same as /clusterfeedbacks/46904
      * @param i index of item ID
      * @return {Promise<void>}
      */
@@ -184,10 +224,7 @@ class SectionItemManager {
         const _ = this;
         let endpoint = _._endpoints[which];
         let id = _._itemIDstore.get(i).id;
-        print("184: id: ", id);
         let queryString = _._idtoQueryString(id, which);
-        print("177: ", id);
-        print("178: ", queryString);
         return _._q(queryString);
     }
 
@@ -214,28 +251,21 @@ class SectionItemManager {
     }
 }
 
+
+
+
+
+
 /**
  * A "CLUSTER" ITEM is defined as ONE cluster ID, AND a LIST of associated feedback entries.
  */
 class ClustersManager extends SectionItemManager {
     constructor(...args) {
         super(...args);
-        this._activeindex = 0;
+
     }
 
-    getActiveIndex(){
-        return this._activeindex;
-    }
 
-    incrementIndex(){
-        let count = _._itemstore.count();
-        if(this._activeindex + 1 < count) this._activeindex++;
-    }
-
-    decrementCount(){
-        let count = _._itemstore.count();
-        if(this._activeindex - 1 >= 0) this._activeindex--;
-    }
 
 }
 
@@ -246,6 +276,5 @@ class SentencesManager extends SectionItemManager {
     constructor(...args) {
         super(...args);
     }
-
 }
 
