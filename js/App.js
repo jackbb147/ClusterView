@@ -290,7 +290,6 @@ class Section1 extends Section {
     //
     // }
 
-
     /**
      * generate a new manager,
      * @return a new manager object.
@@ -300,8 +299,6 @@ class Section1 extends Section {
         let manager = new ClustersManager(q, endpoints, filter);
         return manager;
     }
-
-
 
 
     get title(){
@@ -480,9 +477,13 @@ class Section1 extends Section {
         return f;
     }
 
+
+
     render(){
         // print("804: new filter value: ", this.state.filter);
         const _ = this;
+        let picking = this.props.picking;
+
         // var items = this.state.displayTemp ?
         //     this.state.tempItems :
         //     this.state.loadedItems;
@@ -516,7 +517,7 @@ class Section1 extends Section {
                     cbClear={this.onClear.bind(this)}   //clear search
                     i={1}
                     title={this.title}
-                    picking={this.props.picking}
+                    picking={picking}
                 >
                 </SectionHead>
 
@@ -546,31 +547,7 @@ class Section1 extends Section {
                     })}
                     </ClusterWrapper>
                 </SectionBody>
-                {/*<SectionBody>*/}
-                {/*    <ClusterWrapper*/}
-                {/*        scrollcb={_._handleScroll()}*/}
-                {/*        leftBtnClick={this.onLeftBtnClick.bind(this)}*/}
-                {/*        rightBtnClick={this.onRightBtnClick.bind(this)}*/}
-                {/*        filter={filter}>*/}
-                {/*        {items.map((cardInfo, index) => {*/}
-                {/*                let accepted = cardInfo.accepted;*/}
-                {/*                return <ClusterCard key={index}*/}
-                {/*                                    title={cardInfo.title}*/}
-                {/*                                    accepted={accepted}*/}
 
-                {/*                                    feedbacks={cardInfo.feedbacks}*/}
-                {/*                                    */}
-                {/*                                    headCB={this._toggleAcceptedStatus()} //the callback function for (un)acceptBtn*/}
-                {/*                                    id={cardInfo.id}*/}
-                {/*                                    index={index}*/}
-                {/*                                    removeCB={this.onRemoveFeedback()} //remove a feedback entry*/}
-                {/*                >*/}
-                {/*                </ClusterCard>*/}
-                {/*            }*/}
-
-                {/*        )}*/}
-                {/*    </ClusterWrapper>*/}
-                {/*</SectionBody>*/}
             </div>
         )
     }
@@ -697,8 +674,19 @@ class App extends React.Component {
             _removedSentences : new Store(),
 
             // if empty, the user didn't select any sentences to be dropped in to cluster.
-            pickedSentences: new Store()
+            pickedSentenceIDs: new Store(),
+            recipientClusterID: undefined,   //which cluster will receive the selected sentences?
+            recipientClusterIndex: undefined,
+            refreshIndex: undefined // which cluster card index to refresh
         }
+    }
+
+    get refreshIndex(){
+        return this.state.refreshIndex
+    }
+
+    set refreshIndex(i){
+        this.setState({refreshIndex: i});
     }
 
     /**
@@ -706,11 +694,46 @@ class App extends React.Component {
      * @return {boolean}
      */
     get picking() {
-        return !(this.state.pickedSentences.isEmpty())
+        return !(this.state.pickedSentenceIDs.isEmpty())
+    }
+
+    set picking(newValue){
+        const _ = this;
+        if(!newValue){
+            let pickedSentencesStore = _.pickedSentences;
+            pickedSentencesStore.clear();
+            _.pickedSentences = pickedSentencesStore;
+        }
+        else if(newValue === this.picking){
+            return;
+        }else{
+            _.pickedSentences = new Store();
+        }
+
+    }
+
+    get recipientClusterIndex(){
+        return this.state.recipientClusterIndex;
+    }
+
+    set recipientClusterIndex(index){
+        this.setState({
+            recipientClusterIndex: index
+        })
+    }
+
+    get recipientClusterID(){
+        return this.state.recipientClusterID;
+    }
+
+    set recipientClusterID(ID){
+        this.setState({
+            recipientClusterID: ID
+        })
     }
 
     get pickedSentences(){
-        return this.state.pickedSentences
+        return this.state.pickedSentenceIDs
     }
 
     set pickedSentences(obj){
@@ -775,22 +798,69 @@ class App extends React.Component {
         return f;
     }
 
+    /**
+     * Upon giving a group of sentences to a cluster,
+     * the picked[] array clears and picking becomes false.
+     * @return {f}
+     * @private
+     */
     _handleGiveToCluster(){
 
         const _ = this;
-        function f(clusterID){
-            P("CLICKED, 752", clusterID, _.pickedSentences);
-            let pickedSentenceIDs = _.pickedSentences.getItems()
-            while(!_.pickedSentences.isEmpty())
-            {
-                let id = pickedSentenceIDs.pop();
-                print2("ID: ", id);
-            }
+        function f(clusterID, clusterIndex)
+        {
+            P("f callled: ", clusterID, clusterIndex);
+            P(_.pickedSentences.getItems());
+            _.refreshIndex = clusterIndex;
+            return Promise.all(
+                _.pickedSentences.getItems().map(sentenceid => _.props.q("addsentence/"+clusterID+"/"+sentenceid))
+            ).then(()=>{ 
+                P(" APPARENTLY, QUERY COMPLETED!")
+            })
+            // let sentences = _.pickedSentences;
+            // _.recipientClusterID = clusterID;
+            // _.recipientClusterIndex = clusterIndex;
+            // print2("CLICKED, 752",
+            //     clusterID,
+            //     clusterIndex,
+            //     _.pickedSentences,
+            //     );
+            // return {
+            //     clusterID,
+            //     clusterIndex,
+            //     pickedSentences : _.pickedSentences
+            // }
+            //
+            // /**
+            //  * handler for when user picked unclustered sentences for a cluster
+            //  */
+
         }
 
         return f;
     }
 
+    /**
+     *   async onReceiveSentence(){
+     *             const _  = this;
+     *             if(_.props.recipientClusterID === undefined) return;
+     *             let sentenceIDs = _.props.receivedSentenceIDs,
+     *                 receipientIndex = _.props.recipientClusterIndex,
+     *                 receipientID = _.props.recipientClusterID;
+     *
+     *             print2("sentenceIDs: ", sentenceIDs);
+     *             let updatePromises = sentenceIDs.map(sentenceID =>
+     *                 _.manager.update(
+     *                     receipientIndex,
+     *                     "addsentence",
+     *                     receipientID,
+     *                     sentenceID
+     *                 ))
+     *             return Promise.all(updatePromises)
+     *         }
+     * @return {f}
+     * @private
+     */
     _handlePickSentence(){
 
         const _ = this;
@@ -811,6 +881,10 @@ class App extends React.Component {
                 <Section1 i={1} q={this.props.q}
                           cb={this._handleSentenceRemove1()}
                           giveMe={this._handleGiveToCluster()}
+
+                          recipientClusterID={this.recipientClusterID}
+                          recipientClusterIndex={this.recipientClusterIndex}
+                          receivedSentenceIDs={this.pickedSentences.getItems()}
                           picking={this.picking}
                 />
                 <Section2 i={2}
@@ -936,8 +1010,6 @@ class ClustersBox extends React.Component {
 }
 
 
-
-
 class SetAcceptedStatusBtn extends React.Component{
     constructor(props) {
         super(props);
@@ -978,8 +1050,9 @@ class ClusterCardHead extends React.Component {
     _onPick(){
         const _ = this;
         let clusterID = this.props.id; //TODO
+        let clusterIndex = this.props.index;
         if(_.props.picking)
-            _.props.giveMe(clusterID);
+            _.props.giveMe(clusterID, clusterIndex);
     }
 
     render( ) {
