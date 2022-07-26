@@ -385,6 +385,8 @@ class Section1 extends Section {
          */
         function toggler(accepted, id, index=undefined){
 
+            console.trace()
+            print2(this);
             _.manager.update(index, accepted ? "unacceptcluster" : "acceptcluster")
                 .then(newManager => {
                     print2(newManager);
@@ -514,6 +516,7 @@ class Section1 extends Section {
                     cbClear={this.onClear.bind(this)}   //clear search
                     i={1}
                     title={this.title}
+                    picking={this.props.picking}
                 >
                 </SectionHead>
 
@@ -537,6 +540,8 @@ class Section1 extends Section {
                                                 index={index}
                                                 headCB={this._toggleAcceptedStatus()}
                                                 removeCB={this.onRemoveFeedback()}
+                                                giveMe={this.props.giveMe}
+                                                picking={this.props.picking}
                             />
                     })}
                     </ClusterWrapper>
@@ -646,6 +651,7 @@ class Section2 extends Section {
             })
         }
         let items = this.items;
+        print2("items: ", items);
         return (
             <div className={"row main_section2"}>
                 <SectionHead
@@ -660,7 +666,10 @@ class Section2 extends Section {
                     {items.map((sentence, index) =>
                         <UnclusteredSentence
                             key={index}
-                            text={sentence.sentence_text}/>
+                            text={sentence.sentence_text}
+                            pickMe={_.props.pickMe}
+                            sentence_id={sentence.id}
+                        />
                     )}
                     </UnclusteredSentencesWrapper>
                 </SectionBody>
@@ -685,8 +694,27 @@ class App extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            _removedSentences : new Store()
+            _removedSentences : new Store(),
+
+            // if empty, the user didn't select any sentences to be dropped in to cluster.
+            pickedSentences: new Store()
         }
+    }
+
+    /**
+     * is the user picking a sentence(to add to a cluster? )
+     * @return {boolean}
+     */
+    get picking() {
+        return !(this.state.pickedSentences.isEmpty())
+    }
+
+    get pickedSentences(){
+        return this.state.pickedSentences
+    }
+
+    set pickedSentences(obj){
+        this.setState({pickedSentences: obj})
     }
 
     get removedSentences(){
@@ -747,15 +775,50 @@ class App extends React.Component {
         return f;
     }
 
+    _handleGiveToCluster(){
+
+        const _ = this;
+        function f(clusterID){
+            P("CLICKED, 752", clusterID, _.pickedSentences);
+            let pickedSentenceIDs = _.pickedSentences.getItems()
+            while(!_.pickedSentences.isEmpty())
+            {
+                let id = pickedSentenceIDs.pop();
+                print2("ID: ", id);
+            }
+        }
+
+        return f;
+    }
+
+    _handlePickSentence(){
+
+        const _ = this;
+        function f(sentenceID){
+            P("CLICKED, 756", sentenceID);
+            let sentences = _.pickedSentences
+            sentences.append([sentenceID]);
+            _.pickedSentences = sentences;
+        }
+
+        return f;
+
+    }
+
     render() {
         return   (
             <div className={"container main"}>
                 <Section1 i={1} q={this.props.q}
-                          cb={this._handleSentenceRemove1()}/>
+                          cb={this._handleSentenceRemove1()}
+                          giveMe={this._handleGiveToCluster()}
+                          picking={this.picking}
+                />
                 <Section2 i={2}
                           q={this.props.q}
                           cb={this._handleSentenceRemove2()}
-                          removedSentences={this.removedSentences}/>
+                          removedSentences={this.removedSentences}
+                          pickMe={this._handlePickSentence()}
+                />
             </div>
         )
     }
@@ -835,7 +898,16 @@ class SectionHead extends React.Component {
         return (
             <div className={"col-12 section_head"}>
                 <div className={"container_fluid"}>
-                    <div className={this.props.filterCB?"filterBtn btn btn-primary":""} onClick={this.props.filterCB}>{this.props.title}</div>
+                    <div
+                        className={
+                            (this.props.filterCB?"filterBtn btn btn-primary":"")
+                        }
+
+                        onClick={this.props.filterCB}
+
+                    >
+                        {this.props.title}
+                    </div>
                     <SearchBar i={this.props.i} cb={this.props.cb} cbClear={this.props.cbClear}></SearchBar>
                 </div>
             </div>
@@ -888,7 +960,11 @@ class SetAcceptedStatusBtn extends React.Component{
             'ClusterCard_unaccept-btn' : "ClusterCard_accept-btn";
         var text = this.props.accepted ? 'unaccept':'accept';
         return (
-            <div onClick={this._handleClick.bind(this)} className={className + " btn" }>{text}</div>
+            <div
+                onClick={this._handleClick.bind(this)}
+                className={className + " btn" }>
+                {text}
+            </div>
         )
     }
 }
@@ -899,10 +975,25 @@ class ClusterCardHead extends React.Component {
         super(props);
     }
 
+    _onPick(){
+        const _ = this;
+        let clusterID = this.props.id; //TODO
+        if(_.props.picking)
+            _.props.giveMe(clusterID);
+    }
+
     render( ) {
+        const _ = this;
+        let picking = _.props.picking;
+
         return (
             <div className={"row ClusterCard_head"}>
-                <div className={"col ClusterCard_title"}>{this.props.title}</div>
+                <div
+                    className={`col ClusterCard_title ` + (picking ? "btn btn-primary" : "")}
+                    onClick={_._onPick.bind(this)}
+                >
+                    {this.props.title}
+                </div>
                 {/*<div className={"ClusterCard_close"}>X</div>*/}
                 <SetAcceptedStatusBtn
                     accepted={this.props.accepted}
@@ -1003,14 +1094,25 @@ class ClusterCard extends React.Component {
         return (
             <div className={`ClusterCard ${display} ${accepted ? acceptedClassName : unacceptedClassName}`}>
                 <div className={"container_fluid"}>
-                    <ClusterCardHead index={this.props.index} cb={this.props.headCB} id={this.props.id} accepted={this.props.accepted} title={this.props.title}></ClusterCardHead>
+                    <ClusterCardHead
+                        index={this.props.index}
+                        cb={this.props.headCB}
+                        id={this.props.id}
+                        accepted={this.props.accepted}
+                        title={this.props.title}
+                        giveMe={this.props.giveMe}
+                        picking={this.props.picking}
+                    />
                     <ClusterCardBody
                         feedbacks={this.props.feedbacks}
                         removeCB={this.props.removeCB}
                         clusterID={this.props.id}
                         clusterIndex={this.props.index}
+
                     />
+
                 </div>
+                <div className={"addSentenceToMe"}></div>
             </div>
         );
     }
@@ -1098,10 +1200,19 @@ class UnclusteredSentence extends React.Component {
         super(props);
     }
 
+
+    handlePickMe(){
+        const _ = this;
+        this.props.pickMe(_.props.sentence_id);
+    }
+
     render(){
         // print("923: my props: ", this.props);
         return (
-            <div className={"row unclustered-sentence"}>{this.props.text}</div>
+            <div className={"row unclustered-sentence"}>
+                <div className={"col-8"}>{this.props.text}</div>
+                <div className={"col-4 pickMeBtn"} onClick={this.handlePickMe.bind(this)}>PICK ME</div>
+            </div>
         )
     }
 
