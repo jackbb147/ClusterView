@@ -259,6 +259,7 @@ class Section1 extends Section {
         this._boxClassName = clustersBoxClassName;
         this._endpoint = clusterEndpoint;
         this._filter = 0;    // 0 for display all, 1 for accepted only, 2 for unaccepted only
+
     }
 
     /**
@@ -477,33 +478,30 @@ class Section1 extends Section {
         return f;
     }
 
+    onRefreshIndex(){
+        const _ = this;
+
+        if(!(_.props.refreshIndex === undefined))
+        {
+            _
+                .manager
+                .update(_.props.refreshIndex,
+                    "cluster")
+                .then(newManager => {
+                    P("492: THEN: ", newManager);
+
+                    _.manager = newManager;
+                })
+            if(_.props.refreshIndexCB) _.props.refreshIndexCB();
+        }
+    }
+
 
 
     render(){
-        // print("804: new filter value: ", this.state.filter);
         const _ = this;
         let picking = this.props.picking;
-
-        // var items = this.state.displayTemp ?
-        //     this.state.tempItems :
-        //     this.state.loadedItems;
-        // var items = this.state.itemManager[]
-        // var filter = {
-        //     displayAll: _.state.filter === 0,
-        //     displayAccepted: !(_.state.filter === 2)
-        // }
-        // var title = filter.displayAll
-        //     ? "All Cluster"
-        //     : filter.displayAccepted
-        //         ? "Accepted Clusters"
-        //         : "Unaccepted Clusters";
-        // items =  items.filter(child => {
-        //     return (filter.displayAll ||
-        //         (filter.displayAccepted && child.accepted) ||
-        //         (!filter.displayAccepted && !child.accepted))
-        // });
-        // //load more, if items is 0
-        let filter = _.filter
+        _.onRefreshIndex();
         let items = _.items;
         let manager = _.manager;
         let activeIndex = manager ? manager.activeIndex : -1;
@@ -811,35 +809,29 @@ class App extends React.Component {
         {
             P("f callled: ", clusterID, clusterIndex);
             P(_.pickedSentences.getItems());
-            _.refreshIndex = clusterIndex;
+
             return Promise.all(
-                _.pickedSentences.getItems().map(sentenceid => _.props.q("addsentence/"+clusterID+"/"+sentenceid))
-            ).then(()=>{ 
-                P(" APPARENTLY, QUERY COMPLETED!")
-            })
-            // let sentences = _.pickedSentences;
-            // _.recipientClusterID = clusterID;
-            // _.recipientClusterIndex = clusterIndex;
-            // print2("CLICKED, 752",
-            //     clusterID,
-            //     clusterIndex,
-            //     _.pickedSentences,
-            //     );
-            // return {
-            //     clusterID,
-            //     clusterIndex,
-            //     pickedSentences : _.pickedSentences
-            // }
-            //
-            // /**
-            //  * handler for when user picked unclustered sentences for a cluster
-            //  */
+                _.pickedSentences
+                    .getItems()
+                    .map(sentenceid => _.props.q("addsentence/"+clusterID+"/"+sentenceid)))
+                    .then(()=>{
+                        P(" APPARENTLY, QUERY COMPLETED!")
+                        _.refreshIndex = clusterIndex;
+                    })
+
 
         }
 
         return f;
     }
 
+    _handleRecipientClusterUpdated(){
+        const _ = this;
+        function f(){
+            _.refreshIndex = undefined;
+        }
+        return f;
+    }
     /**
      *   async onReceiveSentence(){
      *             const _  = this;
@@ -886,6 +878,8 @@ class App extends React.Component {
                           recipientClusterIndex={this.recipientClusterIndex}
                           receivedSentenceIDs={this.pickedSentences.getItems()}
                           picking={this.picking}
+                          refreshIndex={this.refreshIndex}
+                          refreshIndexCB={this._handleRecipientClusterUpdated()}
                 />
                 <Section2 i={2}
                           q={this.props.q}
