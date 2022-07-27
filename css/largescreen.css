@@ -36,6 +36,14 @@
         max-height: 70%;
     }
 
+    .row.unclustered-sentence {
+        display: flex;
+    }
+
+    .pickMeBtn {
+        text-align: center;
+    }
+
 
 
 
