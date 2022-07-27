@@ -643,11 +643,10 @@ class Section2 extends Section {
 
 
         function f(sentenceID, index){
-            alert("645!!!");
+
             print2(this);
             let store = _.refreshIndicesStore;
             store.append([index])
-            alert("646: refreshindeices: ", store.getItems());
             print3(store, store.getItems());
             _.refreshIndicesStore = store;
 

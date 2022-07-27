@@ -375,7 +375,10 @@ class SectionItemManager {
     async _initiateItemStore(n= 3){
         const _ = this;
         let itemsPromise = _._prepItems(n);
-        return itemsPromise.then( items => _._itemstore.setItems(items));
+        return itemsPromise.then( items => {
+            print3("379: ", items)
+            _._itemstore.setItems(items)
+        });
     }
 
     /**
@@ -476,7 +479,8 @@ class ClustersManager extends SectionItemManager {
         for(let i = 0; i < count; i++){
             let cluster = arr[0][i][0],
                 feedbacks = this._processFB(arr[1][i].filter(fb => fb)); //because some feedbacks are null.
-            if(!cluster ) continue;
+
+                if(!cluster ) continue;
             items.push(_._buildObject(cluster, feedbacks));
         }
 
@@ -507,21 +511,36 @@ class ClustersManager extends SectionItemManager {
      * the text and feedbackid. return an array
      * @return Array [text, ID]
      */
-    _processFB(rawFB) {
+    _processFB(rawFBs) {
         //TODO
 
-        return rawFB.map(rawText => {
+        return rawFBs.map(rawText => {
             if(!rawText) return [undefined, undefined];
-            var rawArr = rawText.split('');
-            var index = rawArr.lastIndexOf('$');
-
-            let text = rawArr.splice(0, index);
-            rawArr.shift();
-            let fbID = Number(rawArr.join(''));
+            var [text, fbID] = this._processRaw(rawText);
+            var [text, sentenceLen]=this._processRaw(text);
+            var [text, startingIndex]=this._processRaw(text);
             // print("fbID: ", fbID);
-            return [text.join(''), fbID];
+            return [text, fbID, sentenceLen, startingIndex];
         })
 
+    }
+
+
+
+    /**
+     * turn somethign like this "text1$text2" into "text1"
+     * @param char
+     * @private
+     */
+    _processRaw(rawText, splitChar='$')
+    {
+        //TODO
+        var rawArr = rawText.split('');
+        var index = rawArr.lastIndexOf(splitChar);
+        let part1 = rawArr.splice(0, index);
+        rawArr.shift();
+        let part2= Number(rawArr.join(''));
+        return [part1.join(''), part2]
     }
 
 }

@@ -32,7 +32,7 @@ function P(...thing){
 function P2(...thing)
 {
     let arr = thing
-    alert(arr.join(` `))
+    // alert(arr.join(` `))
 }
 
 function removeClass(el, ...names){

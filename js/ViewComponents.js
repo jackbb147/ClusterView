@@ -162,13 +162,32 @@ class ClusterCardFeedbackEntry extends React.Component {
     }
 
 
-
+    processText(text)
+    {
+        //TODO
+        print3(this.props.sentenceLen, this.props.sentenceStart)
+        let sentenceLen = this.props.sentenceLen, startIndex = this.props.sentenceStart;
+        let arr = text.split("");
+        arr.splice(startIndex, 0, `<mark>`);//${sentenceLen},${startIndex}
+        arr.splice(startIndex+sentenceLen+6, "</mark>")
+        return {
+            __html: `<p>${arr.join("")}</p>`
+        }
+        // let temp = document.createElement("div")
+        // temp.innerHTML = `<p>${text}</p>`
+        // return temp;
+    }
 
     render() {
-        var text = this.props.text;
+        var text = this.processText(this.props.text)
         return (
             <div className={"row ClusterCard_feedback"}>
-                <div className={"feedback_entry"}>{text}</div>
+                <div
+                    className={"feedback_entry"}
+                    dangerouslySetInnerHTML={text}
+                >
+
+                </div>
                 <div onClick={this.onRemove.bind(this)} className={"feedback_remove btn"}>remove</div>
             </div>
         )
@@ -204,6 +223,8 @@ class ClusterCardBody extends React.Component {
                                     key={i}
                                     text={fb[0]}
                                     id={fb[1]} //sentenceID
+                                    sentenceLen={fb[2]}
+                                    sentenceStart={fb[3]}
                                     clusterID={this.props.clusterID}
                                     onRemoveFeedbackEntry={this.onRemoveFeedbackEntry()}
                                     index={i++}
