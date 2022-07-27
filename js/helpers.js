@@ -17,7 +17,7 @@ function print(...thing){
 }
 
 function print3(...thing){
-    console.log(...thing)
+    // console.log(...thing)
 }
 
 function print2(...thing){
