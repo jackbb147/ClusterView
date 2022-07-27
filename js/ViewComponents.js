@@ -164,14 +164,15 @@ class ClusterCardFeedbackEntry extends React.Component {
 
     processText(text)
     {
+
         //TODO
         print3(this.props.sentenceLen, this.props.sentenceStart)
         let sentenceLen = this.props.sentenceLen, startIndex = this.props.sentenceStart;
         let arr = text.split("");
         arr.splice(startIndex, 0, `<mark>`);//${sentenceLen},${startIndex}
-        arr.splice(startIndex+sentenceLen+6, "</mark>")
+        arr.splice(startIndex+sentenceLen+1, 0, `</mark>`)
         return {
-            __html: `<p>${arr.join("")}</p>`
+            __html: `<p>${arr.join("")}</p>` // + startIndex + "," + sentenceLen
         }
         // let temp = document.createElement("div")
         // temp.innerHTML = `<p>${text}</p>`
