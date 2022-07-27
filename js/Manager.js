@@ -64,7 +64,6 @@ class SectionItemManager {
         //TODO
         //TODO there's supposed to be some major logic here
         // this._filter = newFilter;
-        print2("filter: ", newFilter)
         this._filter = newFilter;
 
         this._updateActiveIndex();
@@ -164,7 +163,6 @@ class SectionItemManager {
             case 0:
                 return false;
             case 1:
-                // console.trace()
                 print2("index: ", index, "filtered out? ", !Boolean(item.accepted) )
                 return !Boolean(item.accepted);
             case 2:
@@ -176,12 +174,6 @@ class SectionItemManager {
     set activeIndex(newIndex)
     {
         const _ = this;
-        console.trace()
-        print2("setter called from:  active index: ",
-            _._activeindex,
-            "filter: ", _.filter,
-            "newIndex: ", newIndex,
-            "items: ", _.getAllItems());
         if (!_._isValidIndex(newIndex)) {
             print2("not a valid index: ", newIndex);
             let forward = newIndex >= this.activeIndex;
@@ -192,8 +184,6 @@ class SectionItemManager {
         {
             let forward = newIndex > _.activeIndex;
             _._activeindex = newIndex;
-            print2("successfully set index: ", _.activeIndex);
-
             if(
                 forward
                 && _.needsome
@@ -203,7 +193,6 @@ class SectionItemManager {
                 _.gettingsome = true;
                 _._replenishInventory().then(()=>{
                     _.gettingsome=false
-                    print2("replenished!");
                 });
             }
         }
@@ -315,11 +304,13 @@ class SectionItemManager {
      * @param customEndpoint
      * @param customTails additional fields to append to the query string( after customEndpoint)
      * @param i
+     * @return promise of updated manager.
      */
     update(i, customEndpoint, ...customTails){
         //TODO
         const _ = this,
             id = this._itemIDstore.get(i);
+
         let queryString = customEndpoint
             ? customEndpoint
             : "cluster";
@@ -328,12 +319,12 @@ class SectionItemManager {
             queryString += ("/" + id.id);
         else
             customTails.map(tail => queryString += `/${tail}`)
-        P("QUERYSTRING: ", queryString);
+        P2("313 manager update: ", queryString)
         return _._q(queryString)
             .then(val => _._prepItems(1, i)
                                 .then(obj => {
-                                    print2("OBJ: ", obj)
                                     _._itemstore.swap(i, obj[0]);
+                                    print3("327, swapping with: ", obj[0]);
                                     return _;
                                 })
             )
@@ -423,6 +414,27 @@ class SectionItemManager {
     async fetchAll() {
         let count = this._itemIDstore.count();
         return fetchN(count);
+    }
+
+    /**
+     * TODO the ID store should just store the IDs as numbers, not
+     * objects with a field called id...
+     * get the ID of the item at index
+     * @param index
+     */
+    getID(index)
+    {
+        return this._itemIDstore.get(index).id;
+    }
+
+    setID(index, newID)
+    {
+        this._itemIDstore.setAt(index, newID);
+    }
+
+    setItem(index, newItem)
+    {
+        this.itemstore.setAt(index, newItem);
     }
 }
 
@@ -544,11 +556,10 @@ class SentencesManager extends SectionItemManager {
             ? customEndpoint
             : "sentence";
         queryString += ("/"+ID);
-        P("FETCHING ONE SENTENCE ID: ", queryString);
+        // print2("FETCHING ONE SENTENCE ID: ", queryString);
         return _._q(queryString)
                 .then(obj => {
-                    obj = obj[0].id;
-                    print2("OBJ: ", obj);
+                    obj = obj[0]
                     if(toEnd)
                         _._itemIDstore.append([obj]);
                     return _;

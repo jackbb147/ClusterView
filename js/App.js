@@ -1,26 +1,6 @@
 'use strict';
 
 
-// ==================== CONSTANTS ====================
-const searchBarClassName = "searchBar"; //TODO: refactor this in section class itself
-// --------------------------------------
-const clustersBoxClassName = "clusters-box";    //TODO  refactoring
-const sentencesBoxClassName = "unclusteredSentencesWrapper"; //TODO refactoring
-const clusterEndpoint = "clusters";
-const clusterFeedbacksEndpoint = "clusterfeedbacks";
-const unclusteredSentencesEndpoint = "unclusteredsentences";
-const sentenceEndpoint = "sentence";
-const sentenceClassName = "unclustered-sentence";
-
-const acceptedClassName = "accepted";
-const unacceptedClassName = "unaccepted";
-const sectionEndpoints = [
-    [clusterEndpoint, clusterFeedbacksEndpoint],
-    [unclusteredSentencesEndpoint, sentenceEndpoint]
-];
-const INITIALLOADCOUNT_SENTENCE = 20;
-const INITIALLOADCOUNT_CLUSTER = 3;
-
 // ----------- SECTION LOGIC ------------------------
 
 class Section extends React.Component {
@@ -32,10 +12,12 @@ class Section extends React.Component {
     constructor(props) {
         super(props);
 
+
         this.state = {
             displayTemp: false, // if true, display temporary items.
             managers:[new SectionItemManager()],
-            _managerIndex: 0 //which manager to use.
+            _managerIndex: 0, //which manager to use.
+            refreshIndicesStore : new NoDuplicateStore() // indices of items that need to be refreshed .
         }
         this._boxClassName = undefined;
         this._itemClassName = undefined;
@@ -45,6 +27,15 @@ class Section extends React.Component {
         this._filter = 0;
 
 
+    }
+
+
+    get refreshIndicesStore(){return this.state.refreshIndicesStore}
+
+    set refreshIndicesStore(newArr){
+        this.setState({
+            refreshIndicesStore: newArr
+        })
     }
 
     /**
@@ -168,7 +159,7 @@ class Section extends React.Component {
         print2("managers: ", managers);
         managers.pop();
         this.managers = managers;
-        this.whichManager--;
+        this.whichManager = 0;
     }
 
     /**
@@ -189,17 +180,15 @@ class Section extends React.Component {
             _.props.q,
             [endpoint0, endpoint1]
         );
-        print2("manager: ", manager);
         let managers = _.managers;
 
-        return manager.initiate()
+        return manager.initiate(10)
             .then(() => {
                 // print2("189: managers: ", managers);
                 P("196: initated: ", manager);
                 managers.push(manager);
                 _.managers = managers;
                 _.whichManager = _.managers.length-1;
-                print2("new manager: ", manager);
 
                 //TODO: load, with custom endpoint and filter
             })
@@ -241,6 +230,38 @@ class Section extends React.Component {
         //         })
         // })
     }
+    /**
+     * perform a hot reload of the items at given indices.
+     * @param indices
+     * @return {Promise<void>}
+     */
+    async hotReload(indices, endpoint){
+        const _ = this;
+        // P("hot reload called: ")
+        // print2("hot reload called from ", this);
+        // P("HOT RELOAD");
+        // print2("INDICES: ", indices, this );
+        // if(indices === undefined) return;
+        // if(indices.length > 0)
+        // {
+
+        //     P("HOT RELOADING")
+        //     let indices = indices.filter(i => !(i===undefined));
+        //     print2("INDICES:", indices);
+        //     Promise
+        //         .all(indices
+        //             .map(i=>_.manager.update(i, endpoint)))
+        //         .then(newManager => {
+        //             // P("259: THEN: ", newManager);
+        //             _.manager = newManager;
+        //             if(_.props.refreshIndexCB) _.props.refreshIndexCB();
+        //         })
+        //     _
+        // }
+    }
+
+
+
 
 }
 
@@ -280,17 +301,6 @@ class Section1 extends Section {
             })
     }
 
-    //
-    // /**
-    //  * AFTER MOUNTING, SILENTLY LOAD ALL
-    //  * CLUSTERS, 3 AT A TIME, UNTIL ALL IS LOADED.
-    //  */
-    // componentDidMount(){        // const _ = this;
-    //     // const q = this.props.q;
-    //     // print("I(SECTION1) MOUNTED!");
-    //
-    // }
-
     /**
      * generate a new manager,
      * @return a new manager object.
@@ -300,7 +310,6 @@ class Section1 extends Section {
         let manager = new ClustersManager(q, endpoints, filter);
         return manager;
     }
-
 
     get title(){
         switch (this.filter){
@@ -332,12 +341,10 @@ class Section1 extends Section {
      * @param direction 1 for right, -1 for left
      * @return {f}
      */
-
     onRightClick(){
         const _ = this;
         const manager = _.manager;
         function f(){
-            print2("f called ");
             let oldindex = manager.activeIndex;
             manager.activeIndex++;
             print2(manager.activeIndex, oldindex, manager.activeIndex == oldindex)
@@ -383,7 +390,6 @@ class Section1 extends Section {
          */
         function toggler(accepted, id, index=undefined){
 
-            console.trace()
             print2(this);
             _.manager.update(index, accepted ? "unacceptcluster" : "acceptcluster")
                 .then(newManager => {
@@ -427,81 +433,83 @@ class Section1 extends Section {
     }
 
     /**
-     * for removing a feedback entry from a cluster card.
-     */
+        * for removing a feedback entry from a cluster card.
+        * send api query , then hot reload this item.
+        * @return {*}
+    */
     onRemoveFeedback(){
         const   _ = this,
                 q = _.props.q,
                 manager = _.manager;
 
-        function f(clusterID, sentenceID, cardIndex){
-            print2("357: remove feedback called with: ", clusterID, sentenceID, cardIndex);
-            _.manager.update(cardIndex,
-                "removesentence",
+        /**
+         *
+         * @param clusterID
+         * @param sentenceID
+         * @param itemIndex
+         */
+        function f(clusterID, sentenceID, itemIndex){
+            print2(
+                "357: remove feedback called with: ",
                 clusterID,
-                sentenceID
-            )
+                sentenceID,
+                itemIndex,
+            );
+
+            _.refreshIndicesStore.append([clusterID]);
+
+            print2(_.refreshIndicesStore.getItems())
+
+            _.manager
+                .update(
+                    itemIndex,
+                    "removesentence",
+                    clusterID,
+                    sentenceID
+                )
                 .then (newManager => {
                     _.manager = newManager;
-                    _.props.cb(sentenceID);
+                    _.props.onRemoveFeedbackEntry(sentenceID);
+
                 })
-            // //send a remove query to the API
-            // var v = true;
-            // if(clusterID != -666 && v){
-            //     q(`removesentence/${clusterID}/${sentenceID}`)
-            //         .then (val => {
-            //             _._buildItem(clusterID).then(cluster => {
-            //                 //TODO
-            //                 let index = cardIndex;
-            //                 print("637: updated cluster: ", cluster)
-            //                 //TODO 2. swap this with the old one in the current items array.
-            //                 let items = _.state.displayTemp ? _.state.tempItems : _.state.loadedItems;
-            //                 items[index] = cluster;
-            //                 //TODO 2 then setstate to trigger a rerendering.
-            //                 if(_.state.displayTemp) {
-            //                     _.setState({
-            //                         tempItems: items
-            //                     })
-            //                 }else{
-            //                     _.setState({
-            //                         loadedItems: items
-            //                     })
-            //                 }
-            //
-            //
-            //             })
-            //         })
-            // }
-            // // on resolve, set state
         }
 
         return f;
     }
 
-    onRefreshIndex(){
-        const _ = this;
 
-        if(!(_.props.refreshIndex === undefined))
-        {
-            _
-                .manager
-                .update(_.props.refreshIndex,
-                    "cluster")
-                .then(newManager => {
-                    P("492: THEN: ", newManager);
+    onReceiveSentences(){
+        function f(clusterID, clusterIndex){
+            const _ =this;
+            let sentences = this.props.pickedSentences;
+            let manager = this.manager;
+            P("482: YOU CLICKED ME: see console ", clusterID, clusterIndex )
+            print2(this, clusterID, clusterIndex, sentences, q)
 
-                    _.manager = newManager;
+            //TODO send API query.
+            Promise.all(
+                sentences.map(sentenceID => manager.update(clusterIndex, "addsentence", clusterID, sentenceID))
+            )
+                .then(val => {
+                    _.manager = _.manager; //trigger a rerendering.
                 })
-            if(_.props.refreshIndexCB) _.props.refreshIndexCB();
+
+
+            this.props.onReceiveSentences(sentences)
         }
+
+
+        return f.bind(this);
     }
-
-
 
     render(){
         const _ = this;
-        let picking = this.props.picking;
-        _.onRefreshIndex();
+        let picking = false
+        if(this.props.pickedSentences.length > 0 )
+            picking = true;
+        //
+        // if(_.props.refreshIndex)
+        //     _.hotReload([_.props.refreshIndex],"cluster");
         let items = _.items;
         let manager = _.manager;
         let activeIndex = manager ? manager.activeIndex : -1;
@@ -516,6 +524,7 @@ class Section1 extends Section {
                     i={1}
                     title={this.title}
                     picking={picking}
+
                 >
                 </SectionHead>
 
@@ -538,9 +547,11 @@ class Section1 extends Section {
                                                 display={display}
                                                 index={index}
                                                 headCB={this._toggleAcceptedStatus()}
-                                                removeCB={this.onRemoveFeedback()}
-                                                giveMe={this.props.giveMe}
-                                                picking={this.props.picking}
+                                                onRemoveFeedbackEntry={this.onRemoveFeedback()}
+                                                // giveMe={this.props.giveMe}
+                                                picking={picking}
+                                                onReceiveSentences={this.onReceiveSentences()}
+                                                // refreshIndexCB={this.props.refreshIndexCB}
                             />
                     })}
                     </ClusterWrapper>
@@ -592,41 +603,111 @@ class Section2 extends Section {
         return manager;
     }
 
+    /**
+     * a sentence has been unclustered!
+     */
+    async welcomeNewMember(newSentenceIDs){
+        const _ = this;
+        print2(
+            "welcome new member! I am: ",
+            this,
+            newSentenceIDs
+        );
+        //TODO send API query,
+        _.processRemovedSentences(newSentenceIDs)
+            .then(v => {
+                _.props.removedFeedbackSentenceIDsCallback(newSentenceIDs)
+            })
+    }
 
 
     //TODO active index should always be at the end,
     // SO that when triggering a loadMore, ...
 
-    async processRemovedSentences(){
+    async processRemovedSentences(newSentenceIDs){
         const _ = this;
-        if(!_.props.removedSentences.isEmpty()){
             // pop and load.
-            let ids = _.props.removedSentences.getItems();
+            let manager = _.manager;
+            let ids = newSentenceIDs;
             let promises = ids.map( id =>
                 //TODO
-                _.manager.fetchOneID(id)
-                    .then(newManager => {
-                        print2(newManager.idstore.last);
-                        print2(newManager.idstore);
-                    })
+                _.manager.fetchOneID(id) .then (m => manager = m)
             )
-            return Promise.all(promises);
-        }
 
+
+            return Promise.all(promises).then(()=>{_.manager = manager});
     }
 
+    addToClusterCB(){
+        const _ =this;
+
+
+        function f(sentenceID, index){
+            alert("645!!!");
+            print2(this);
+            let store = _.refreshIndicesStore;
+            store.append([index])
+            alert("646: refreshindeices: ", store.getItems());
+            print3(store, store.getItems());
+            _.refreshIndicesStore = store;
+
+            //TODO maybe "delete" this item with this index
+
+
+
+            _.props.addToClusterCB(sentenceID);
+        }
+
+        return f.bind(this);
+    }
+
+    handleRefreshIndices(){
+        if(this.props.addedToCluster && this.refreshIndicesStore.notEmpty())
+        {
+            const _ = this;
+            P2("handling refresh indices")
+            print3("handle refresh indices: ",  this.refreshIndicesStore.getItems())
+            //TODO send API query.
+            _.manager.setID()
+            _.refreshIndicesStore.getItems().map(index=>{
+                _.manager.setID(index, undefined)
+                _.manager.setItem(index, undefined);
+                _.refreshIndicesStore.clear()
+                _.manager = _.manager; //trigger a rerendering.
+
+            });
+
+
+        }
+    }
 
     render(){
         const _ = this;
-        if(!_.props.removedSentences.isEmpty())
-        {
-            _.processRemovedSentences().then( val => {
-                P("555!");
-                _.props.cb();
-            })
+
+
+
+        let newSentenceIDs = _.props.removedFeedbackSentenceIDs
+        if(newSentenceIDs.length > 0){
+            _.welcomeNewMember(newSentenceIDs)
         }
+        this.handleRefreshIndices();
+
+
+
+        // if(
+        //     _.props.pickedSentenceStore &&
+        //     _.props.pickedSentenceStore.notEmpty()
+        //     && this.props.addedToCluster){
+        //     this.hotReload();
+        //     // _.hotReload(_.props.pickedSentenceStore.getItems(), "sentence");
+        // }
+        // // this.handleRefresh();
+        // if(_.props.refreshSentenceStore.notEmpty()){
+        //     P("has things to refresh!");
+        //     //     super.hotReload(_.props.refreshSentenceStore.getItems(), "sentence")
+        // }
+
         let items = this.items;
-        print2("items: ", items);
         return (
             <div className={"row main_section2"}>
                 <SectionHead
@@ -639,26 +720,26 @@ class Section2 extends Section {
                 <SectionBody>
                     <UnclusteredSentencesWrapper cb={(_._handleScroll)()}>
                     {items.map((sentence, index) =>
-                        <UnclusteredSentence
-                            key={index}
-                            text={sentence.sentence_text}
-                            pickMe={_.props.pickMe}
-                            sentence_id={sentence.id}
-                        />
+                        {
+                            if(sentence === undefined) return;
+                            return <UnclusteredSentence
+                                key={index}
+                                text={sentence.sentence_text}
+                                // pickMe={_.props.pickMe}
+                                sentence_id={sentence.id}
+                                addToClusterCB={this.addToClusterCB()}
+                                index={index}
+                            />
+                        }
                     )}
                     </UnclusteredSentencesWrapper>
                 </SectionBody>
-                {/*<SectionBody>*/}
-                {/*    <UnclusteredSentencesWrapper cb={(this._handleScroll)()} loadMore={()=>{_._loadItems(5,false)}}>*/}
-                {/*        {items.map((sentence, index) =>*/}
-                {/*            <UnclusteredSentence key={index} text={sentence.sentence_text}></UnclusteredSentence>*/}
-                {/*        )}*/}
-                {/*    </UnclusteredSentencesWrapper>*/}
-                {/*</SectionBody>*/}
             </div>
         )
     }
 }
+
+
 
 // ----------- APP ------------------------
 class App extends React.Component {
@@ -669,22 +750,23 @@ class App extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            _removedSentences : new Store(),
-
+            _removedFeedbackSentenceIDStore : new NoDuplicateStore(),    //removed from cluster.
             // if empty, the user didn't select any sentences to be dropped in to cluster.
-            pickedSentenceIDs: new Store(),
-            recipientClusterID: undefined,   //which cluster will receive the selected sentences?
-            recipientClusterIndex: undefined,
-            refreshIndex: undefined // which cluster card index to refresh
+            pickedSentenceStore: new NoDuplicateStore(),   //added to cluster, removed from section2.
+            addedToCluster: false, //true if picked sentences have been added to cluster.
+            picking: false,
         }
     }
-
-    get refreshIndex(){
-        return this.state.refreshIndex
+    
+    get addedToCluster(){
+        return this.state.addedToCluster
     }
-
-    set refreshIndex(i){
-        this.setState({refreshIndex: i});
+    
+    set addedToCluster(bool){
+        P2("750 added to cluster setter called: ", bool)
+        this.setState({
+            addedToCluster: bool
+        })
     }
 
     /**
@@ -692,200 +774,140 @@ class App extends React.Component {
      * @return {boolean}
      */
     get picking() {
-        return !(this.state.pickedSentenceIDs.isEmpty())
+        // TODO
+        return this.pickedSentenceStore.notEmpty()
     }
 
-    set picking(newValue){
-        const _ = this;
-        if(!newValue){
-            let pickedSentencesStore = _.pickedSentences;
-            pickedSentencesStore.clear();
-            _.pickedSentences = pickedSentencesStore;
-        }
-        else if(newValue === this.picking){
-            return;
-        }else{
-            _.pickedSentences = new Store();
-        }
-
+    get pickedSentenceStore(){
+        return this.state.pickedSentenceStore
     }
 
-    get recipientClusterIndex(){
-        return this.state.recipientClusterIndex;
-    }
-
-    set recipientClusterIndex(index){
-        this.setState({
-            recipientClusterIndex: index
-        })
-    }
-
-    get recipientClusterID(){
-        return this.state.recipientClusterID;
-    }
-
-    set recipientClusterID(ID){
-        this.setState({
-            recipientClusterID: ID
-        })
-    }
-
-    get pickedSentences(){
-        return this.state.pickedSentenceIDs
-    }
-
-    set pickedSentences(obj){
+    set pickedSentenceStore(obj){
         this.setState({pickedSentences: obj})
     }
 
-    get removedSentences(){
-        return this.state._removedSentences;
+    get removedFeedbackSentenceIDs(){
+        const _ = this;
+        let store = _.state._removedFeedbackSentenceIDStore;
+        return store.getItems();
     }
 
-    set removedSentences(newObj){
+    set removedFeedbackSentenceIDs(newArr){
+        if(newArr === undefined) return;
+        let store = this.state._removedFeedbackSentenceIDStore;
+        store.setItems(newArr);
         this.setState({
-            _removedSentences: newObj
+            _removedFeedbackSentenceIDStore: store
         })
+        // this.setState({
+        //     _removedSentences: newObj
+        // })
     }
 
-    /**
-     *
-     * Callback function passed down to cluster cards (section1)
-     * for the adding-sentence-to-cluster feature.
-     */
-    _handleClusterClick(clusterID){
-        print("989: handleClusterClick called: ", clusterID);
-    }
-
-    /**
-     * Callback function passed down to sentences (section2)
-     * for the adding-sentence-to-cluster feature.
-     */
-    _handleSentenceClick(sentenceID){
-        print("997: handleSentenceClick called: ", sentenceID)
-    }
-
-    /**
-     * on removing a sentence, the removed ID should
-     * be reported to App class, so that
-     * section 2 can trigger a new fetch for the
-     * newly unclustered sentence.
-     * @private
-     */
-    _handleSentenceRemove1(){
+    onRemoveFeedbackEntry( ){
         const _ = this;
-
-        function f(removedSentenceID){
-            P("602: F CALLED, with ", removedSentenceID);
-            _.removedSentences.append([removedSentenceID]);
-            print2("removed sentences: ", _.removedSentences);
-            _.removedSentences = _.removedSentences; //to trigger a re-render.
+        function f(sentenceID){
+            print2(
+                "onremovefeedbackentry called: i am: ",
+                _,
+                "sentence id: ",
+                sentenceID
+            )
+            let IDs = _.removedFeedbackSentenceIDs;
+            IDs.push(sentenceID);
+            _.removedFeedbackSentenceIDs = IDs;
         }
 
-        return f;
+        return f.bind(this);
     }
 
-    _handleSentenceRemove2(){
-        const _ = this;
-        function f(){
-            P("======= =====648 f called! HANDLING REMOVE ");
-            _.removedSentences.clear();
-            _.removedSentences = _.removedSentences; // to trigger a rerender.
-        }
-
-        return f;
-    }
 
     /**
-     * Upon giving a group of sentences to a cluster,
-     * the picked[] array clears and picking becomes false.
-     * @return {f}
-     * @private
+     * call back passed to section 2 for adding sentence to cluster.
      */
-    _handleGiveToCluster(){
-
-        const _ = this;
-        function f(clusterID, clusterIndex)
-        {
-            P("f callled: ", clusterID, clusterIndex);
-            P(_.pickedSentences.getItems());
-
-            return Promise.all(
-                _.pickedSentences
-                    .getItems()
-                    .map(sentenceid => _.props.q("addsentence/"+clusterID+"/"+sentenceid)))
-                    .then(()=>{
-                        P(" APPARENTLY, QUERY COMPLETED!")
-                        _.refreshIndex = clusterIndex;
-                    })
-
-
-        }
-
-        return f;
-    }
-
-    _handleRecipientClusterUpdated(){
-        const _ = this;
-        function f(){
-            _.refreshIndex = undefined;
-        }
-        return f;
-    }
-    /**
-     *   async onReceiveSentence(){
-     *             const _  = this;
-     *             if(_.props.recipientClusterID === undefined) return;
-     *             let sentenceIDs = _.props.receivedSentenceIDs,
-     *                 receipientIndex = _.props.recipientClusterIndex,
-     *                 receipientID = _.props.recipientClusterID;
-     *
-     *             print2("sentenceIDs: ", sentenceIDs);
-     *             let updatePromises = sentenceIDs.map(sentenceID =>
-     *                 _.manager.update(
-     *                     receipientIndex,
-     *                     "addsentence",
-     *                     receipientID,
-     *                     sentenceID
-     *                 ))
-     *             return Promise.all(updatePromises)
-     *         }
-     * @return {f}
-     * @private
-     */
-    _handlePickSentence(){
+    handleAddSentenceToCluster(){
 
         const _ = this;
         function f(sentenceID){
-            P("CLICKED, 756", sentenceID);
-            let sentences = _.pickedSentences
-            sentences.append([sentenceID]);
-            _.pickedSentences = sentences;
+            P("line 752: YOU CLICKED ME. I AM: SEE CONSOLE", sentenceID);
+            print2(_)
+            _.addedToCluster = false;
+            _.pickedSentenceStore.append([sentenceID]);
+            _.pickedSentenceStore = _.pickedSentenceStore; // to trigger a rerender
+            print2("picked sentences: ", _.pickedSentenceStore.getItems())
         }
 
-        return f;
-
+        return f.bind(this)
     }
 
+
+    _clearFrom(store, items)
+    {
+        P(
+            "800: trying to clear: ",
+            items,
+            " from: ",
+            store)
+        items.map(item => store.removeItem(item));
+        P("after clearing: see console", )
+    }
+
+    //TODO some refactoring can be done to merge the two clear callbacks into just one
+    /**
+     * delete the given ids from removedsentencefeedbackids.
+     * @param ids
+     */
+    clearFromRemovedSentenceFeedbackIDs(){
+        const _ =this;
+        function f(ids){
+            _._clearFrom(_.removedFeedbackSentenceIDStore, ids)
+            _.removedFeedbackSentenceIDStore = _.removedFeedbackSentenceIDStore
+        }
+        return f.bind(this);
+    }
+
+    get removedFeedbackSentenceIDStore(){
+        return  this.state._removedFeedbackSentenceIDStore;
+    }
+
+    set removedFeedbackSentenceIDStore(store){
+        const _ =this;
+        _.setState({
+            _removedFeedbackSentenceIDStore: store
+        })
+    }
+
+
+
+
+    clearFromPickedSentenceStore()
+    {
+        const _ =this;
+        function f(ids){
+            P2("871: clear from picked sentences");
+            _._clearFrom(_.pickedSentenceStore, ids)
+            _.pickedSentenceStore = _.pickedSentenceStore //to trigger a rerender
+            _.addedToCluster = true;
+        }
+        return f.bind(this);
+    }
     render() {
         return   (
             <div className={"container main"}>
-                <Section1 i={1} q={this.props.q}
-                          cb={this._handleSentenceRemove1()}
-                          giveMe={this._handleGiveToCluster()}
+                <Section1 i={1}
+                          q={this.props.q}
 
-                          recipientClusterID={this.recipientClusterID}
-                          recipientClusterIndex={this.recipientClusterIndex}
-                          receivedSentenceIDs={this.pickedSentences.getItems()}
-                          picking={this.picking}
-                          refreshIndex={this.refreshIndex}
-                          refreshIndexCB={this._handleRecipientClusterUpdated()}
+                          pickedSentences={this.pickedSentenceStore.getItems()}
+                            onRemoveFeedbackEntry={this.onRemoveFeedbackEntry()}
+                          onReceiveSentences={this.clearFromPickedSentenceStore()}
+
                 />
                 <Section2 i={2}
                           q={this.props.q}
-                          cb={this._handleSentenceRemove2()}
-                          removedSentences={this.removedSentences}
-                          pickMe={this._handlePickSentence()}
+                          removedFeedbackSentenceIDs={this.removedFeedbackSentenceIDs}
+                          removedFeedbackSentenceIDsCallback={this.clearFromRemovedSentenceFeedbackIDs()}
+                          addedToCluster={this.addedToCluster}
+                          addToClusterCB={this.handleAddSentenceToCluster()}
                 />
             </div>
         )
@@ -904,417 +926,3 @@ async function q(endpoint, params={}){
 const domContainer = document.querySelector('.AppContainer');
 const root = ReactDOM.createRoot(domContainer);
 root.render(<App q={q}></App>);
-
-// ==================== VIEW COMPONENTS ====================
-class SearchBar extends React.Component {
-    /**
-     * this.props.cb: callback function for search btn
-     * this.props.i: 1 or 2 (identifier used for classname)
-
-     */
-    constructor(props) {
-        super(props);
-    }
-
-    /**
-     * after pressing search, the clear button appears.
-     * After clearing, the clear button disappears.
-     * @private
-     */
-    _onSearch(){
-        //TODO
-        var clearBtn = document.querySelector(`.searchBar-${this.props.i} >.searchBar_clear`)
-        if(clearBtn.classList.contains("no-display")){
-            clearBtn.classList.remove("no-display");
-        }
-        this.props.cb();
-    }
-
-    _onClear(){
-        //TODO
-        var clearBtn = document.querySelector(`.searchBar-${this.props.i} >.searchBar_clear`);
-        clearBtn.classList.add("no-display");
-        this.props.cbClear();
-    }
-    render(){
-        return (
-            <div className={`${searchBarClassName} ${searchBarClassName}-${this.props.i}`}>
-                <div className={"searchBar_input"}>
-                    <input type="text"/>
-                </div>
-                <div className={"searchBar_btn btn"} onClick={this._onSearch.bind(this)}>Search</div>
-                <div className={"searchBar_clear no-display"} onClick={this._onClear.bind(this)}>Clear</div>
-            </div>
-        )
-    }
-}
-
-
-// ----------- SECTION 1 ----------------
-
-class SectionHead extends React.Component {
-    /**
-     * this.props.cb: callback function passed to search btn.
-     * @param props
-     */
-    constructor(props) {
-        super(props);
-    }
-
-    render(){
-
-        return (
-            <div className={"col-12 section_head"}>
-                <div className={"container_fluid"}>
-                    <div
-                        className={
-                            (this.props.filterCB?"filterBtn btn btn-primary":"")
-                        }
-
-                        onClick={this.props.filterCB}
-
-                    >
-                        {this.props.title}
-                    </div>
-                    <SearchBar i={this.props.i} cb={this.props.cb} cbClear={this.props.cbClear}></SearchBar>
-                </div>
-            </div>
-        )
-    }
-}
-
-class ClustersBox extends React.Component {
-    constructor(props) {
-        super(props);
-        this.classname = clustersBoxClassName;
-
-    }
-
-
-    render(){
-        const _ = this;
-        let filter = this.props.filter;
-
-        return (
-            <div onScroll={_.props.scrollcb ? _.props.scrollcb.bind(_) : ()=>{}} className="col col-10 hideScrollBar clusters-box">
-                {this.props.children}
-            </div>
-        )
-    }
-}
-
-
-class SetAcceptedStatusBtn extends React.Component{
-    constructor(props) {
-        super(props);
-        if(!this.props.accepted) {
-            this.className = "ClusterCard_accept-btn "
-            this.text = "accept"
-        }
-
-    }
-
-    _handleClick(){
-        print("you clicked me ")
-        print("323: button clicked",this.props.accepted , this.props.id);
-        this.props.cb(this.props.accepted, this.props.id, this.props.index)
-    }
-
-    render(){
-
-        var className = this.props.accepted ?
-            'ClusterCard_unaccept-btn' : "ClusterCard_accept-btn";
-        var text = this.props.accepted ? 'unaccept':'accept';
-        return (
-            <div
-                onClick={this._handleClick.bind(this)}
-                className={className + " btn" }>
-                {text}
-            </div>
-        )
-    }
-}
-
-
-class ClusterCardHead extends React.Component {
-    constructor(props) {
-        super(props);
-    }
-
-    _onPick(){
-        const _ = this;
-        let clusterID = this.props.id; //TODO
-        let clusterIndex = this.props.index;
-        if(_.props.picking)
-            _.props.giveMe(clusterID, clusterIndex);
-    }
-
-    render( ) {
-        const _ = this;
-        let picking = _.props.picking;
-
-        return (
-            <div className={"row ClusterCard_head"}>
-                <div
-                    className={`col ClusterCard_title ` + (picking ? "btn btn-primary" : "")}
-                    onClick={_._onPick.bind(this)}
-                >
-                    {this.props.title}
-                </div>
-                {/*<div className={"ClusterCard_close"}>X</div>*/}
-                <SetAcceptedStatusBtn
-                    accepted={this.props.accepted}
-                    id={this.props.id}
-                    cb={this.props.cb}
-                    index={this.props.index}
-                />
-            </div>
-        )
-    }
-}
-
-class ClusterCardFeedbackEntry extends React.Component {
-    constructor(props) {
-        super(props);
-    }
-
-    /**
-     * callback for remove feedback
-     */
-    onRemove(){
-        var clusterID = this.props.clusterID || -666;   //TODO
-        var sentenceID = this.props.id;
-        var clusterIndex = this.props.clusterIndex;
-        print("381: onRemove called: ", clusterID, sentenceID, clusterIndex);
-
-
-        this.props.cb(clusterID, sentenceID, clusterIndex);
-        //TODO
-    }
-
-
-
-
-    render() {
-        var text = this.props.text;
-        return (
-            <div className={"row ClusterCard_feedback"}>
-                <div className={"feedback_entry"}>{text}</div>
-                <div onClick={this.onRemove.bind(this)} className={"feedback_remove btn"}>remove</div>
-            </div>
-        )
-    }
-}
-
-class ClusterCardBody extends React.Component {
-    constructor(props) {
-        super(props);
-    }
-
-
-    render( ) {
-        const _ = this;
-        // print("735: ", this.props);
-        var i = 0;
-        return (
-            <div className={"row ClusterCard_body hideScrollBar"}>
-                <div className={"container_fluid ClusterCard_body_container hideScrollBar"}>
-                    {
-                        this.props.feedbacks.map(fb =>{
-                            return <ClusterCardFeedbackEntry
-                                key={i}
-                                text={fb[0]}
-                                id={fb[1]} //sentenceID
-                                clusterID={this.props.clusterID}
-                                cb={this.props.removeCB}
-                                index={i++}
-                                clusterIndex={this.props.clusterIndex}
-                            />
-                                // let textNid = _._processText(fb);
-                                // if(!(textNid[1] === undefined))
-
-
-                            }
-                        )
-                    }
-                </div>
-            </div>
-        )
-    }
-}
-
-class ClusterCard extends React.Component {
-    /**
-     *
-     * @param props {title, feedbacks}
-     */
-    constructor(props) {
-        super(props);
-
-    }
-
-
-    render() {
-        let accepted = this.props.accepted;
-        let display = this.props.display ? "" : "no-display-until-lg"
-
-        return (
-            <div className={`ClusterCard ${display} ${accepted ? acceptedClassName : unacceptedClassName}`}>
-                <div className={"container_fluid"}>
-                    <ClusterCardHead
-                        index={this.props.index}
-                        cb={this.props.headCB}
-                        id={this.props.id}
-                        accepted={this.props.accepted}
-                        title={this.props.title}
-                        giveMe={this.props.giveMe}
-                        picking={this.props.picking}
-                    />
-                    <ClusterCardBody
-                        feedbacks={this.props.feedbacks}
-                        removeCB={this.props.removeCB}
-                        clusterID={this.props.id}
-                        clusterIndex={this.props.index}
-
-                    />
-
-                </div>
-                <div className={"addSentenceToMe"}></div>
-            </div>
-        );
-    }
-}
-
-class ClusterWrapper extends React.Component {
-    constructor(props) {
-        super(props);
-    }
-
-    render(){
-        const _ = this;
-        return (
-            <div  className={"container_fluid clustersWrapper"}>
-                <div className="row" >
-                    <LeftBtn cb={this.props.leftBtnClick}></LeftBtn>
-                    <ClustersBox filter={this.props.filter} filterCB={this.props.filterCB} scrollcb={_.props.scrollcb}>{this.props.children}</ClustersBox>
-                    <RightBtn cb={this.props.rightBtnClick}></RightBtn>
-                </div>
-            </div>
-        )
-    }
-}
-
-class LeftBtn extends React.Component {
-    constructor(props) {
-        super(props);
-    }
-
-    handleClick(){
-        print("clicked me ");
-        this.props.cb();
-        // var current = document.querySelector(".ClusterCard:not(.no-display-until-lg)")
-        // if(current === null) return;
-        // var prev = current.previousElementSibling;
-        // if(prev=== null) return;
-        // removeClass(prev, "no-display-until-lg");
-        // addClass(current, "no-display-until-lg");
-
-    }
-
-    render() {
-        return (
-            <div  className={"d-lg-none col col-1 leftBtn btn"}>
-                <div onClick={this.handleClick.bind(this)}>{"<"}</div>
-            </div>
-        )
-    }
-}
-
-class RightBtn extends React.Component {
-    constructor(props) {
-        super(props);
-    }
-
-    handleClick(){
-        print("clicked me ");
-        this.props.cb();
-        // var current = document.querySelector(".ClusterCard:not(.no-display-until-lg)")
-        // if(current === null) return;
-        // var next = current.nextElementSibling;
-        // if(next === null) return;
-        // removeClass(next, "no-display-until-lg");
-        // addClass(current, "no-display-until-lg");
-
-    }
-
-    render() {
-        return (
-            <div  className={"d-lg-none col col-1 rightBtn btn"}>
-                <div onClick={this.handleClick.bind(this)}> {">"}</div>
-            </div>
-        )
-    }
-}
-
-
-
-
-
-// ----------- SECTION 2 ----------------
-
-class UnclusteredSentence extends React.Component {
-    constructor(props) {
-        super(props);
-    }
-
-
-    handlePickMe(){
-        const _ = this;
-        this.props.pickMe(_.props.sentence_id);
-    }
-
-    render(){
-        // print("923: my props: ", this.props);
-        return (
-            <div className={"row unclustered-sentence"}>
-                <div className={"col-8"}>{this.props.text}</div>
-                <div className={"col-4 pickMeBtn"} onClick={this.handlePickMe.bind(this)}>PICK ME</div>
-            </div>
-        )
-    }
-
-}
-
-class SectionBody extends React.Component {
-    constructor(props) {
-        super(props);
-    }
-
-    render(){
-        return (
-            <div className={"col-12 section_body"}>
-                {this.props.children}
-            </div>
-        )
-    }
-}
-
-class UnclusteredSentencesWrapper extends React.Component {
-    constructor(props) {
-        super(props);
-        this.classname = "unclusteredSentencesWrapper"
-    }
-
-
-    render(){
-        const _ = this;
-        return (
-            <div
-                onScroll={_.props.cb ? _.props.cb.bind(_) : ()=>{}}
-                className={"container_fluid unclusteredSentencesWrapper hideScrollBar"}>
-                {this.props.children}
-            </div>
-        )
-    }
-}
-
