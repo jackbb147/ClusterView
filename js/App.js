@@ -913,7 +913,7 @@ class App extends React.Component {
     }
 }
 
-const PRODUCTION = false;
+const PRODUCTION = true;
 async function q(endpoint, params={}){
     var link = PRODUCTION ? "https://clusterjack.herokuapp.com/api" : "http://localhost:1700/api";
     return fetch(`${link}/${endpoint}`, params)
